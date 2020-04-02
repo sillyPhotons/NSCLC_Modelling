@@ -3,3 +3,5 @@ STAGE = {1:[2.5,2.5],
          3:[6.0, 3.0]}
 
 TUMOR_DENSITY = 5.8*10**8
+
+DEATH_DIAMETER = 13.

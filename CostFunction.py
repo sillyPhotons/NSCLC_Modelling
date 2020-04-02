@@ -5,6 +5,7 @@ from Model import gompertz_ode
 from ReadData import read_file
 import matplotlib.pyplot as plt
 import GetProperties as gp
+from Constants import DEATH_DIAMETER
 
 
 def cost_function_no_treatment(params, x, data,
@@ -31,7 +32,7 @@ def cost_function_no_treatment(params, x, data,
         
         try:
             death_time = next(x for x, val in enumerate(solved_diameter) 
-                                  if val >= 13) 
+                                  if val >= DEATH_DIAMETER) 
             # print(death_time)
         except:
           death_time = None
