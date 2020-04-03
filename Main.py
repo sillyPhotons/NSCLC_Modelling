@@ -8,7 +8,7 @@ import ReadData as rd
 from Result import ResultObj, record_simulation
 
 sampling_range = [0, 60]
-monte_carlo_patient_size = 1000
+monte_carlo_patient_size = 1
 pop_manager = gp.PropertyManager(monte_carlo_patient_size)
 
 params = Parameters()
