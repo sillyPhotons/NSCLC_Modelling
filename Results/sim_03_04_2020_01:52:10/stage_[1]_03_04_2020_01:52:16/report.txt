@@ -1,0 +1,18 @@
+[[Fit Statistics]]
+    # fitting method   = CG
+    # function evals   = 106
+    # data points      = 121
+    # variables        = 3
+    chi-square         = 70.9162501
+    reduced chi-square = 0.60098517
+    Akaike info crit   = -58.6492039
+    Bayesian info crit = -50.2618323
+##  Warning: uncertainties could not be estimated:
+    mean_growth_rate:     at initial value
+    carrying_capacity:    at initial value
+[[Variables]]
+    mean_growth_rate:     7.0000e-05 +/-        nan (nan%) (init = 7e-05)
+    std_growth_rate:      0.00723052 +/-        nan (nan%) (init = 0.00723)
+    carrying_capacity:    5.4664e+11 +/- 3.76455277 (0.00%) (init = 5.466371e+11)
+    mean_tumor_diameter:  2.5 (fixed)
+    std_tumor_diameter:   2.5 (fixed)

@@ -1,7 +1,7 @@
 import numpy as np
 from lmfit import minimize, Parameters
 from scipy.integrate import odeint
-from Model import gompertz_ode
+from Model import gompertz_ode, gompertz_analytical
 import matplotlib.pyplot as plt
 from Constants import DEATH_DIAMETER
 import time
@@ -24,15 +24,17 @@ def cost_function_no_treatment(params, x, data, pop_manager):
     for num in range(patient_size):
 
         tumor_diameter = pop_manager.sample_lognormal_param(
-            mean=mean_tumor_diameter, std=std_tumor_diameter, retval=1, lowerbound=0.3, upperbound=5)
+            mean=mean_tumor_diameter, std=std_tumor_diameter, retval=1, lowerbound=0.3, upperbound=5)[0]
         growth_rate = pop_manager.sample_normal_param(
-            mean=mean_growth_rate, std=std_growth_rate, retval=1, lowerbound=0, upperbound=None)
+            mean=mean_growth_rate, std=std_growth_rate, retval=1, lowerbound=0, upperbound=None)[0]
 
         cell_number = pop_manager.get_tumor_cell_number_from_diameter(
-            tumor_diameter[0])
+            tumor_diameter)
 
-        solved_cell_number = odeint(gompertz_ode, cell_number, x, args=(
-            growth_rate, carrying_capacity))
+        solved_cell_number = gompertz_analytical(cell_number, x, growth_rate, carrying_capacity)
+        
+        # odeint(gompertz_ode, cell_number, x, args=(
+        #     growth_rate, carrying_capacity))
 
         solved_diameter = pop_manager.get_diameter_from_tumor_cell_number(
             solved_cell_number)

@@ -1,0 +1,19 @@
+[[Fit Statistics]]
+    # fitting method   = COBYLA
+    # function evals   = 37
+    # data points      = 121
+    # variables        = 3
+    chi-square         = 5.71189418
+    reduced chi-square = 0.04840588
+    Akaike info crit   = -363.442021
+    Bayesian info crit = -355.054650
+[[Variables]]
+    mean_growth_rate:     0.06410740 +/- 0.05505847 (85.88%) (init = 7e-05)
+    std_growth_rate:      0.53949310 +/- 0.00105606 (0.20%) (init = 0.00723)
+    carrying_capacity:    5.4664e+11 +/- 0.04542786 (0.00%) (init = 5.466371e+11)
+    mean_tumor_diameter:  2.5 (fixed)
+    std_tumor_diameter:   2.5 (fixed)
+[[Correlations]] (unreported correlations are < 0.100)
+    C(std_growth_rate, carrying_capacity)  =  66.397
+    C(mean_growth_rate, carrying_capacity) = -0.283
+    C(mean_growth_rate, std_growth_rate)   =  0.250

@@ -11,6 +11,10 @@ def gompertz_ode(N, t, growth_rate, carrying_capacity):
 
     return dNdt
 
+def gompertz_analytical(N0, t, growth_rate, carrying_capacity):
+    # t = np.array(t)
+    N = carrying_capacity * np.exp(np.log(N0/carrying_capacity)*np.exp(-1.*growth_rate*t))
+    return N
 
 def predict_no_treatment(params, x, pop_manager, stage, csv_path=None):
 
@@ -28,12 +32,12 @@ def predict_no_treatment(params, x, pop_manager, stage, csv_path=None):
         for num in range(patient_size):
 
             tumor_diameter = pop_manager.sample_lognormal_param(
-                mean=mean_tumor_diameter, std=std_tumor_diameter, retval=1, lowerbound=0.3, upperbound=5)
+                mean=mean_tumor_diameter, std=std_tumor_diameter, retval=1, lowerbound=0.3, upperbound=5)[0]
             growth_rate = pop_manager.sample_normal_param(
-                mean=mean_growth_rate, std=std_growth_rate, retval=1, lowerbound=0, upperbound=None)
+                mean=mean_growth_rate, std=std_growth_rate, retval=1, lowerbound=0, upperbound=None)[0]
 
             cell_number = pop_manager.get_tumor_cell_number_from_diameter(
-                tumor_diameter[0])
+                tumor_diameter)
 
             solved_cell_number = odeint(gompertz_ode, cell_number, x, args=(
                 growth_rate, carrying_capacity))

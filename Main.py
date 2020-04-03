@@ -22,7 +22,7 @@ def run(cost_function, params, fcn_args):
 
 
 sampling_range = [0, 60]
-monte_carlo_patient_size = 50
+monte_carlo_patient_size = 10000
 pop_manager = gp.PropertyManager(monte_carlo_patient_size)
 res_manager = ResultManager()
 
@@ -55,24 +55,25 @@ res_manager.record_simulation(result,
                               comment="stage_[1]"
                               )
 
-result.params["mean_tumor_diameter"].vary = True
-result.params["std_tumor_diameter"].vary = True
-result.params["mean_growth_rate"].vary = False
-result.params["std_growth_rate"].vary = False
-result.params["carrying_capacity"].vary = False
+# result.params["mean_tumor_diameter"].vary = True
+# result.params["std_tumor_diameter"].vary = True
+# result.params["mean_growth_rate"].vary = False
+# result.params["std_growth_rate"].vary = False
+# result.params["carrying_capacity"].vary = False
 
-result2 = run(cost_function_no_treatment, result.params,
-              fcn_args=(x, data, pop_manager))
+# pop_man = gp.PropertyManager(monte_carlo_patient_size)
+# result2 = run(cost_function_no_treatment, result.params,
+#               fcn_args=(x, data, pop_man))
 
-px2, py2 = predict_no_treatment(
-    result2.params, np.arange(sampling_range[0], sampling_range[1] + 0.1, 0.1), pop_manager2, 1)
+# px2, py2 = predict_no_treatment(
+#     result2.params, np.arange(sampling_range[0], sampling_range[1] + 0.1, 0.1), pop_manager2, 1)
 
-res_manager.record_simulation(result2,
-                              ResultObj(x, data, "Months",
-                                        "Proportion of Patients Alive", curve_label="Data", label="Data", color="black", alpha=0.7),
-                              ResultObj(x, data + result2.residual, "Months",
-                                        "Proportion of Patients Alive", curve_label="Model", label="Model", alpha=0.7),
-                              ResultObj(px2, py2, "Months", "Proportion of Patients Alive",
-                                        curve_label="{} Patients Model Prediction".format(pop_manager2.get_patient_size()), label="{} Patients Model Prediction".format(pop_manager2.get_patient_size()), alpha=0.7),
-                              comment="stage_[1]"
-                              )
+# res_manager.record_simulation(result2,
+#                               ResultObj(x, data, "Months",
+#                                         "Proportion of Patients Alive", curve_label="Data", label="Data", color="black", alpha=0.7),
+#                               ResultObj(x, data + result2.residual, "Months",
+#                                         "Proportion of Patients Alive", curve_label="Model", label="Model", alpha=0.7),
+#                               ResultObj(px2, py2, "Months", "Proportion of Patients Alive",
+#                                         curve_label="{} Patients Model Prediction".format(pop_manager2.get_patient_size()), label="{} Patients Model Prediction".format(pop_manager2.get_patient_size()), alpha=0.7),
+#                               comment="stage_[1]"
+#                               )
