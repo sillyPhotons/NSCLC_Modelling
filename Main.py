@@ -1,25 +1,14 @@
 import numpy as np
-from lmfit import Minimizer, Parameters, report_fit, fit_report
+from lmfit import Minimizer, Parameters, report_fit
 import time
 from CostFunction import cost_function_no_treatment
 from Model import gompertz_ode, predict_no_treatment
 import GetProperties as gp
 import ReadData as rd
+from Result import ResultObj, record_simulation
 
-
-def record_simulation (result, *args):
-    
-    from datetime import datetime
-    import os
-    
-    now = datetime.now().strftime("%d_%m_%Y_%H:%M:%S")
-    directory_path = "./Results/sim_{}".format(now)
-    os.mkdir(directory_path)
-    
-    with open(directory_path + "/report.txt", "w") as report:
-        report.write(fit_report(result))
-        
-monte_carlo_patient_size = 1
+sampling_range = [0, 60]
+monte_carlo_patient_size = 1000
 pop_manager = gp.PropertyManager(monte_carlo_patient_size)
 
 params = Parameters()
@@ -31,48 +20,30 @@ params.add('mean_tumor_diameter', value=2.5, vary=False)
 params.add('std_tumor_diameter', value=2.5, vary=False)
 
 sampling_interval = 0.5  # a data point every 0.5 months
-x, data = rd.get_data("./Data/stage1.csv", sampling_interval, range=[0, 120])
+x, data = rd.get_data("./Data/stage1.csv", sampling_interval, range=sampling_range)
 
 start = time.time()
 minner = Minimizer(cost_function_no_treatment, params,
                    fcn_args=(x, data, pop_manager))
 
 result = minner.minimize(method="powell")
+report_fit(result)
+
 end = time.time()
 runtime = end - start
-
-print("Took {} seconds to complete".format(runtime))
+print("Took a total of {} seconds to complete".format(runtime))
 
 final = data + result.residual
 
-record_simulation(result)
+pop_manager2 = gp.PropertyManager(1432)
+px1000, py1000 = predict_no_treatment(
+    result.params, np.arange(sampling_range[0], sampling_range[1] + 0.1, 0.1), pop_manager2, 1)
 
-# report_fit(result)
-
-# px500, py500 = predict_no_treatment(
-#     result.params, np.arange(0, 60 + 0.1, 0.1), pop_manager, 1)
-# px1000, py1000 = predict_no_treatment(
-#     result.params, np.arange(0, 60 + 0.1, 0.1), pop_manager, 1)
-# # px10000, py10000 = predict_no_treatment(
-# #     result.params, np.arange(0, 60 + 0.1, 0.1), pop_manager, 1)
-
-# try:
-#     import matplotlib.pyplot as plt
-#     import matplotlib as mpl
-#     mpl.rcParams["font.family"] = "FreeSerif"
-#     plt.rc("text", usetex=True)
-#     plt.figure(dpi=100)
-
-#     plt.step(x, data, 'k+', label="Data")
-#     plt.step(x, final, label="Data + Residual")
-#     # plt.step(px500, py500, label="500 Patient Prediction Model")
-#     # plt.step(px1000, py1000, label="1000 Patient Prediction Model")
-#     # plt.step(px10000, py10000, label = "10000 Patient Prediction Model")
-
-#     plt.xlabel("Months")
-#     plt.ylabel("Proportion of Patients Alive")
-#     plt.legend()
-#     plt.savefig("Stage_[1]_[{}]Patients_[{}]Sampling_Interval.pdf".format(
-#         monte_carlo_patient_size, sampling_interval))
-# except ImportError:
-#     pass
+record_simulation(result,
+                  ResultObj(x, data, "Months",
+                            "Proportion of Patients Alive", curve_label="Data", label="Data", color="black", alpha=0.7),
+                  ResultObj(x, final, "Months",
+                            "Proportion of Patients Alive", curve_label="Model", label="Model", alpha=0.7),
+                  ResultObj(px1000, py1000, "Months", "Proportion of Patients Alive",
+                            curve_label="1000 Patients Model Prediction", label="1000 Patients Model Prediction", alpha=0.7)
+                  )

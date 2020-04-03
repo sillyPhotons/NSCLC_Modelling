@@ -3,12 +3,9 @@ import numpy as np
 from scipy.optimize import curve_fit
 import matplotlib as mpl
 from Constants import STAGE, TUMOR_DENSITY
-import csv
 
 """
 """
-
-
 class PropertyManager ():
 
     patient_size = None

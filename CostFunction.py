@@ -5,9 +5,9 @@ from Model import gompertz_ode
 from ReadData import read_file
 import matplotlib.pyplot as plt
 from Constants import DEATH_DIAMETER
+import time
 
-
-def cost_function_no_treatment(params, x, data, pop_manager):
+def cost_function_no_treatment(params, x, data, pop_manager, get_population_from_csv = False):
 
     p = params.valuesdict()
     mean_growth_rate = p['mean_growth_rate']
@@ -18,6 +18,8 @@ def cost_function_no_treatment(params, x, data, pop_manager):
 
     patient_size = pop_manager.get_patient_size()
     patients_alive = [patient_size] * len(x)
+
+    start = time.time()
 
     for num in range(patient_size):
 
@@ -52,5 +54,7 @@ def cost_function_no_treatment(params, x, data, pop_manager):
     # plt.step(x, patients_alive)
     # plt.show()
 
-    print("Iteration Complete.")
+    end = time.time()
+    runtime = end - start
+    print("Iteration completed in {} seconds.".format(runtime))
     return (patients_alive - data)
