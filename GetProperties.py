@@ -3,93 +3,151 @@ import numpy as np
 from scipy.optimize import curve_fit
 import matplotlib as mpl
 from Constants import STAGE, TUMOR_DENSITY
+import csv
 
 """
 """
 
 
-def sample_dist(stage, num_points=10000):
+class PropertyManager ():
 
-    dist_params = STAGE[stage]
+    patient_size = None
 
-    if (stage == 1):
+    def __init__(self, patient_size):
+        PropertyManager.patient_size = patient_size
+        return
 
-        data = [k for k in np.random.lognormal(
-        *dist_params, num_points) if 0.3 < k < 5.]
-        
-        i = len(data)
-        while i < num_points:
-            point = np.random.lognormal(*dist_params, 1)
+    def sample_normal_param(self, mean, std, retval=1, upperbound=None, lowerbound=None):
 
-            if (stage == 1):
-                if (0.3 < point < 5):
+        if (upperbound == None and lowerbound == None):
+
+            return np.random.normal(mean, std, retval)
+
+        elif (upperbound == None and lowerbound != None):
+
+            data = list()
+            i = 0
+            while i < retval:
+                point = np.random.normal(mean, std, 1)
+
+                if (lowerbound < point):
                     data.append(point[0])
                     i += 1
-    else:
-        data = [k for k in np.random.lognormal(
-        *dist_params, num_points) if 0.3 < k]
+            return data
 
-        i = len(data)
+        elif (upperbound != None and lowerbound == None):
 
-        while i < num_points:
-            point = np.random.lognormal(*dist_params, 1)
+            data = list()
+            i = 0
+            while i < retval:
+                point = np.random.normal(mean, std, 1)
 
-            if (point > 0.3):
-                data.append(point[0])
-                i += 1
+                if (point < upperbound):
+                    data.append(point[0])
+                    i += 1
+            return data
 
-    return np.array(data)
+        else:
+            data = list()
+            i = 0
+            while i < retval:
+                point = np.random.normal(mean, std, 1)
+
+                if (lowerbound < point < upperbound):
+                    data.append(point[0])
+                    i += 1
+            return data
+
+    def sample_lognormal_param(self, mean, std, retval=1, lowerbound=None, upperbound=None):
+
+        if (upperbound == None and lowerbound == None):
+
+            return np.random.lognormal(mean, std, retval)
+
+        elif (upperbound == None and lowerbound != None):
+
+            data = list()
+            i = 0
+            while i < retval:
+                point = np.random.lognormal(mean, std, 1)
+
+                if (lowerbound < point[0]):
+                    data.append(point[0])
+                    i += 1
+            return data
+
+        elif (upperbound != None and lowerbound == None):
+
+            data = list()
+            i = 0
+            while i < retval:
+                point = np.random.lognormal(mean, std, 1)
+
+                if (point[0] < upperbound):
+                    data.append(point[0])
+                    i += 1
+            return data
+
+        else:
+            data = list()
+            i = 0
+            while i < retval:
+                point = np.random.lognormal(mean, std, 1)
+                if (lowerbound < point[0] < upperbound):
+                    data.append(point[0])
+                    i += 1
+            return data
+            
+    def get_patient_size (self):
+
+        return PropertyManager.patient_size
+    
+    def get_volume_from_diameter(self, diameter_array):
+
+        volume_array = (4.*np.pi/3.) * (diameter_array/2.)**2
+
+        return volume_array
 
 
-def get_volume_from_diameter(diameter_array):
+    def get_diameter_from_volume(self, volume_array):
 
-    volume_array = (4.*np.pi/3.) * (diameter_array/2.)**2
+        diameter_array = np.sqrt((3./(4*np.pi)) * volume_array) * 2
 
-    return volume_array
-
-
-def get_diameter_from_volume(volume_array):
-
-    diameter_array = np.sqrt((3./(4*np.pi)) * volume_array) * 2
-
-    return diameter_array
+        return diameter_array
 
 
-def get_tumor_cell_number_from_diameter(diameter_array):
+    def get_tumor_cell_number_from_diameter(self, diameter_array):
 
-    volume_array = get_volume_from_diameter(diameter_array)
-    cell_number_array = volume_array * TUMOR_DENSITY
+        volume_array = self.get_volume_from_diameter(diameter_array)
+        cell_number_array = volume_array * TUMOR_DENSITY
 
-    return cell_number_array
-
-
-def get_tumor_cell_number_from_volume(volume_array):
-
-    cell_number_array = volume_array * TUMOR_DENSITY
-
-    return cell_number_array
+        return cell_number_array
 
 
-def get_volume_from_tumor_cell_number(cell_number_array):
+    def get_tumor_cell_number_from_volume(self, volume_array):
 
-    volume_array = cell_number_array / TUMOR_DENSITY
+        cell_number_array = volume_array * TUMOR_DENSITY
 
-    return volume_array
-
-
-def get_diameter_from_tumor_cell_number(cell_number_array):
-
-    volume_array = get_volume_from_tumor_cell_number(cell_number_array)
-    diameter_array = get_diameter_from_volume(volume_array)
-
-    return diameter_array
+        return cell_number_array
 
 
-def sample_param(mean, std, retval=1):
-    return np.random.normal(mean, std, retval)
+    def get_volume_from_tumor_cell_number(self, cell_number_array):
 
+        volume_array = cell_number_array / TUMOR_DENSITY
+
+        return volume_array
+
+
+    def get_diameter_from_tumor_cell_number(self, cell_number_array):
+
+        volume_array = self.get_volume_from_tumor_cell_number(cell_number_array)
+        diameter_array = self.get_diameter_from_volume(volume_array)
+
+        return diameter_array
 
 if __name__ == "__main__":
-
-    data = sample_dist(1)
-    print(data)
+    pop_man = PropertyManager(10)
+    size = pop_man.get_patient_size()
+    data = pop_man.sample_lognormal_param(2.5, 2.5, 10000, 0.3, None)
+    plt.hist(data)
+    plt.show()

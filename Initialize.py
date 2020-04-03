@@ -2,7 +2,7 @@ import GetProperties as gp
 import csv
 
 
-def create_patient_population(num_patients=10000, csv_name="population", stages=["1", "2", "3A", "3B"]):
+def get_patient_population(num_patients=10000, csv_name="population", stages=["1", "2", "3A", "3B"]):
 
     dir_list = list()
 
@@ -30,4 +30,3 @@ def create_patient_population(num_patients=10000, csv_name="population", stages=
 
         dir_list.append("./" + csv_name + stage + ".csv")
     
-    return 
