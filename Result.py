@@ -8,10 +8,12 @@ import csv
 mpl.rcParams["font.family"] = "FreeSerif"
 plt.rc("text", usetex=True)
 plt.figure(dpi=100)
-    
+
+
 class ResultObj():
 
-    def __init__(self, x, y, xdes="", ydes="", curve_label="", **plotargs):
+    def __init__(self, plt_callable, x, y, xdes="", ydes="", curve_label="", **plotargs):
+        self.plotfunc = plt_callable
         self.data_size = len(x)
         self.x = x
         self.y = y
@@ -22,14 +24,15 @@ class ResultObj():
 
         assert(self.data_size == len(y))
 
+
 class ResultManager():
-    
-    def __init__(self, primary_path = "."):
+
+    def __init__(self, primary_path="."):
         now = datetime.now().strftime("%d_%m_%Y_%H:%M:%S")
         self.directory_path = primary_path + "/Results/sim_{}".format(now)
         os.mkdir(self.directory_path)
 
-    def record_simulation(self, result, *args, comment = "stage_[N]"):
+    def record_simulation(self, result, *args, comment="stage_[N]"):
 
         now = datetime.now().strftime("%d_%m_%Y_%H:%M:%S")
         path = self.directory_path + "/{}_{}".format(comment, now)
@@ -47,7 +50,7 @@ class ResultManager():
                 for num in range(r.data_size):
                     writer.writerow([r.x[num], r.y[num]])
 
-            plt.step(r.x, r.y, **r.plotargs)
+            r.plotfunc(r.x, r.y, **r.plotargs)
             plt.xlabel("Months")
             plt.ylabel("Proportion of Patients Alive")
         plt.legend()

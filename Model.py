@@ -16,7 +16,52 @@ def gompertz_analytical(N0, t, growth_rate, carrying_capacity):
     N = carrying_capacity * np.exp(np.log(N0/carrying_capacity)*np.exp(-1.*growth_rate*t))
     return N
 
-def predict_no_treatment(params, x, pop_manager, stage, csv_path=None):
+"""
+    Given t and N as numpy arrays, computes the volume doubling time of N(t) of
+    patient using equation (2) in Geng's paper.
+
+    Requires: t must contain an element equal to 12, correponding to 12 months
+              t and N are numpy arrays
+"""
+def volume_doubling_time(t,N):
+    
+    index = np.where(t == 12.0)[0]
+    v2 = N[index]
+
+    return (365)*np.log(2) / np.log(v2/N[0])
+
+def predict_volume_doubling_time(params, x, pop_manager):
+
+    p = params.valuesdict()
+    mean_growth_rate = p['mean_growth_rate']
+    std_growth_rate = p['std_growth_rate']
+    carrying_capacity = p['carrying_capacity']
+    mean_tumor_diameter = p['mean_tumor_diameter']
+    std_tumor_diameter = p['std_tumor_diameter']
+
+    patient_size = pop_manager.get_patient_size()
+    VDT_hist = []
+
+    for num in range(patient_size):
+
+        tumor_diameter = pop_manager.sample_lognormal_param(
+            mean=mean_tumor_diameter, std=std_tumor_diameter, retval=1, lowerbound=0.3, upperbound=5)[0]
+
+        growth_rate = pop_manager.sample_normal_param(
+            mean=mean_growth_rate, std=std_growth_rate, retval=1, lowerbound=0, upperbound=None)[0]
+
+        cell_number = pop_manager.get_tumor_cell_number_from_diameter(
+            tumor_diameter)
+
+        solved_cell_number = odeint(gompertz_ode, cell_number, x, args=(
+            growth_rate, carrying_capacity))
+        print(solved_cell_number)
+        VDT_hist.append(volume_doubling_time(x, solved_cell_number)[0][0])
+
+    return VDT_hist
+
+
+def predict_no_treatment(params, x, pop_manager, csv_path=None):
 
     p = params.valuesdict()
     mean_growth_rate = p['mean_growth_rate']
