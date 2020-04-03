@@ -77,3 +77,5 @@ if __name__ == "__main__":
          "Proportion of Patients Alive", "Survival Curve")
     plot(s4, "Stage 4", "Survival Time [Months]",
          "Proportion of Patients Alive", "Survival Curve")
+    plt.show()
+    

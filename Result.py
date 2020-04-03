@@ -20,14 +20,14 @@ class ResultObj():
         assert(self.data_size == len(y))
 
 
-def record_simulation(result, *args):
+def record_simulation(result, *args, stage = "stage_[N]"):
 
     mpl.rcParams["font.family"] = "FreeSerif"
     plt.rc("text", usetex=True)
     plt.figure(dpi=100)
 
     now = datetime.now().strftime("%d_%m_%Y_%H:%M:%S")
-    directory_path = "./Results/sim_{}".format(now)
+    directory_path = "./Results/sim_{}_{}".format(stage, now)
     os.mkdir(directory_path)
 
     with open(directory_path + "/report.txt", "w") as report:
