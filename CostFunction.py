@@ -36,6 +36,9 @@ def cost_function_no_treatment(params, x, data, pop_manager):
 
         solved_diameter = pop_manager.get_diameter_from_tumor_cell_number(
             solved_cell_number)
+        
+        # plt.plot(x, solved_diameter)
+        # plt.show()
 
         try:
             death_time = next(x for x, val in enumerate(solved_diameter)
@@ -54,4 +57,8 @@ def cost_function_no_treatment(params, x, data, pop_manager):
     end = time.time()
     runtime = end - start
     print("Iteration completed in {} seconds.".format(runtime))
+
+    # plt.plot(x,patients_alive)
+    # plt.show()
+
     return (patients_alive - data)
