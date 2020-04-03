@@ -19,20 +19,19 @@ def record_simulation (result, *args):
     with open(directory_path + "/report.txt", "w") as report:
         report.write(fit_report(result))
         
+monte_carlo_patient_size = 1
+pop_manager = gp.PropertyManager(monte_carlo_patient_size)
 
 params = Parameters()
 params.add('mean_growth_rate', value=7.00*10**-5, min=0)
 params.add('std_growth_rate', value=7.23*10**-3, min=0)
 params.add('carrying_capacity',
-           value=gp.get_tumor_cell_number_from_diameter(30), min=0)
+           value=pop_manager.get_tumor_cell_number_from_diameter(30), min=0)
 params.add('mean_tumor_diameter', value=2.5, vary=False)
 params.add('std_tumor_diameter', value=2.5, vary=False)
 
 sampling_interval = 0.5  # a data point every 0.5 months
 x, data = rd.get_data("./Data/stage1.csv", sampling_interval, range=[0, 120])
-
-monte_carlo_patient_size = 1
-pop_manager = gp.PropertyManager(monte_carlo_patient_size)
 
 start = time.time()
 minner = Minimizer(cost_function_no_treatment, params,
