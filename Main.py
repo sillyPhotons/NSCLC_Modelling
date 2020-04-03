@@ -20,7 +20,8 @@ params.add('mean_tumor_diameter', value=2.5, vary=False)
 params.add('std_tumor_diameter', value=2.5, vary=False)
 
 sampling_interval = 0.5  # a data point every 0.5 months
-x, data = rd.get_data("./Data/stage1.csv", sampling_interval, range=sampling_range)
+x, data = rd.get_data("./Data/stage1.csv",
+                      sampling_interval, range=sampling_range)
 
 start = time.time()
 minner = Minimizer(cost_function_no_treatment, params,
