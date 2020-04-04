@@ -1,9 +1,20 @@
+"""
+    This file contains utility functions which can be used read comma separated 
+    data into numpy arrays, and plot visiualize them
+"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
 import matplotlib as mpl
 
+"""
+    An exponential function used to fit the no-treatment data found in 
+    Detterbeck 2008.
 
+    x: numpy array of a scalar
+    a: decay parameter 
+"""
 def func(x, a):
     return np.exp(-a*x)
 
