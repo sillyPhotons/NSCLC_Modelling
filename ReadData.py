@@ -22,16 +22,13 @@ def read_file(data_array):
 
     return x, y
 
-
 """
     Returns estimated experimental data in a 120 month period. Increment is the
     number of months between each data point returned 
 
     Requires: file at file_path exists 
 """
-
-
-def get_data(file_path, increment, range=[0, 120]):
+def get_data(file_path, increment, range = [0, 120]):
 
     dat = np.loadtxt(file_path, delimiter=',')
     x, y = read_file(dat)
@@ -81,3 +78,4 @@ if __name__ == "__main__":
     plot(s4, "Stage 4", "Survival Time [Months]",
          "Proportion of Patients Alive", "Survival Curve")
     plt.show()
+    

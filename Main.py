@@ -1,7 +1,7 @@
 import numpy as np
 from lmfit import Minimizer, Parameters, report_fit
 import time
-from CostFunction import cost_function_no_treatment
+from CostFunction import cost_function_no_treatment, cost_function_no_treatment_diameter
 from Model import gompertz_ode, predict_no_treatment, predict_volume_doubling_time
 import GetProperties as gp
 import ReadData as rd
@@ -23,7 +23,7 @@ def run(cost_function, params, fcn_args):
 
 
 sampling_range = [0, 60]
-monte_carlo_patient_size = 2000
+monte_carlo_patient_size = 100
 pop_manager = gp.PropertyManager(monte_carlo_patient_size)
 res_manager = ResultManager()
 
@@ -31,35 +31,40 @@ params = Parameters()
 params.add('mean_growth_rate', value=7.00*10**-5, min=0, vary=True)
 params.add('std_growth_rate', value=7.23*10**-3, min=0, vary=True)
 params.add('carrying_capacity',
-           value=pop_manager.get_tumor_cell_number_from_diameter(30), min=0)
+           value=30, min=0)
+# params.add('carrying_capacity',
+#            value=pop_manager.get_tumor_cell_number_from_diameter(30), min=0)
 params.add('mean_tumor_diameter', value=2.5, vary=False, min=0, max=5)
 params.add('std_tumor_diameter', value=2.5, vary=False, min=0, max=5)
 
-sampling_interval = 0.5  # a data point every 0.5 months
-x, data = rd.get_data("./Data/stage1.csv",
-                      sampling_interval, range=sampling_range)
+# sampling_interval = 0.5  # a data point every 0.5 months
+# x, data = rd.get_data("./Data/stage1Better.csv",
+#                       sampling_interval, range=sampling_range)
 
-result = run(cost_function_no_treatment, params,
+dat = np.loadtxt("./Data/stage1Better.csv", delimiter=',')
+x, data = rd.read_file(dat)
+
+result = run(cost_function_no_treatment_diameter, params,
              fcn_args=(x, data, pop_manager))
 
 pop_manager2 = gp.PropertyManager(1432)
-# px, py = predict_no_treatment(
-#     result.params, np.arange(sampling_range[0], sampling_range[1] + 0.1, 0.1), pop_manager2)
-vdt = predict_volume_doubling_time(result.params, np.arange(
-    sampling_range[0], sampling_range[1] + 0.1, 0.1), pop_manager2)
+px, py = predict_no_treatment(
+    result.params, np.arange(sampling_range[0], sampling_range[1] + 0.1, 0.1), pop_manager2)
+# vdt = predict_volume_doubling_time(result.params, np.arange(
+#     sampling_range[0], sampling_range[1] + 0.1, 0.1), pop_manager2)
 
-plt.hist(vdt,100,density=True)
-plt.show()
+# plt.hist(vdt,100,density=True)
+# plt.show()
 
-# res_manager.record_simulation(result,
-#                               ResultObj(plt.plot, x, data, "Months",
-#                                         "Proportion of Patients Alive", curve_label="Data", label="Data", color="black", alpha=0.7),
-#                               ResultObj(plt.plot, x, data + result.residual, "Months",
-#                                         "Proportion of Patients Alive", curve_label="Model", label="Model", alpha=0.7),
-#                               # ResultObj(px, py, "Months", "Proportion of Patients Alive",
-#                               # curve_label="{} Patients Model Prediction".format(pop_manager2.get_patient_size()), label="{} Patients Model Prediction".format(pop_manager2.get_patient_size()), alpha=0.7),
-#                               comment="stage_[1]"
-#                               )
+res_manager.record_simulation(result,
+                              ResultObj(plt.step, x, data, "Months",
+                                        "Proportion of Patients Alive", curve_label="Data", label="Data", color="black", alpha=0.7),
+                              ResultObj(plt.step, x, data + result.residual, "Months",
+                                        "Proportion of Patients Alive", curve_label="Model", label="Model", alpha=0.7),
+                              ResultObj(plt.step, px, py, "Months", "Proportion of Patients Alive",
+                                        curve_label="{} Patients Model Prediction".format(pop_manager2.get_patient_size()), label="{} Patients Model Prediction".format(pop_manager2.get_patient_size()), alpha=0.7),
+                              comment="stage_[1]"
+                              )
 
 # result.params["mean_tumor_diameter"].vary = True
 # result.params["std_tumor_diameter"].vary = True

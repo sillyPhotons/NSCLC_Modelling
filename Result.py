@@ -55,3 +55,24 @@ class ResultManager():
             plt.ylabel("Proportion of Patients Alive")
         plt.legend()
         plt.savefig(path + "/plot.pdf")
+
+    def record_prediction(self, *args, comment="stage_[N]"):
+
+        now = datetime.now().strftime("%d_%m_%Y_%H:%M:%S")
+        path = self.directory_path + "/{}_{}".format(comment, now)
+        os.mkdir(path)
+
+        for r in args:
+            description = r.curve_label
+            with open(path + "/{}.csv".format(description), "w") as datafile:
+
+                writer = csv.writer(datafile, delimiter=",")
+
+                for num in range(r.data_size):
+                    writer.writerow([r.x[num], r.y[num]])
+
+            r.plotfunc(r.x, r.y, **r.plotargs)
+            plt.xlabel("Months")
+            plt.ylabel("Proportion of Patients Alive")
+        plt.legend()
+        plt.savefig(path + "/plot.pdf")

@@ -104,13 +104,13 @@ class PropertyManager ():
 
     def get_volume_from_diameter(self, diameter_array):
 
-        volume_array = (4.*np.pi/3.) * (diameter_array/2.)**2
+        volume_array = (4.*np.pi/24.) * (diameter_array**3)
 
         return volume_array
 
     def get_diameter_from_volume(self, volume_array):
 
-        diameter_array = np.sqrt((3./(4*np.pi)) * volume_array) * 2
+        diameter_array = np.cbrt((24./(4*np.pi)) * volume_array)
 
         return diameter_array
 
