@@ -1,3 +1,14 @@
+"""
+    This file contains two versions of the cost function. 
+    
+    `cost_function_no_treatment` involves the conversion from variables 
+    associated from tumor diameter to tumor cell number, and back to tumor
+    diameter to evaluate the death condition (diameter >= 13 cm)
+
+    `cost_function_no_treatment_diameter` uses the variables associated with 
+    tumor diameter as is, and solves the gompertz equation for diameter(time) as
+    opposed to cell_number(time) in the aforemention cost function
+"""
 import numpy as np
 from lmfit import minimize, Parameters
 from scipy.integrate import odeint
@@ -6,7 +17,20 @@ import matplotlib.pyplot as plt
 from Constants import DEATH_DIAMETER
 import time
 
+"""
+    Returns the residual of model and data, given a Parameters object, the xy 
+    data for a KMSc, and a PropertyManager object.
 
+    Requires: 
+        Parameters object contains Parameter objects with the keys:
+            mean_growth_rate
+            std_growth_rate
+            carrying_capacity
+            mean_tumor_diameter
+            std_tumor_diameter
+        The KMSc data at t = 0 must equal 1
+        x,y series are numpy arrays
+"""
 def cost_function_no_treatment(params, x, data, pop_manager):
 
     p = params.valuesdict()
@@ -60,11 +84,22 @@ def cost_function_no_treatment(params, x, data, pop_manager):
     runtime = end - start
     print("Iteration completed in {} seconds.".format(runtime))
 
-    # plt.plot(x,patients_alive)
-    # plt.show()
-
     return (patients_alive - data)
 
+"""
+    Returns the residual of model and data, given a Parameters object, the xy 
+    data for a KMSc, and a PropertyManager object.
+
+    Requires: 
+        Parameters object contains Parameter objects with the keys:
+            mean_growth_rate
+            std_growth_rate
+            carrying_capacity
+            mean_tumor_diameter
+            std_tumor_diameter
+        The KMSc data at t = 0 must equal 1
+        x,y series are numpy arrays
+"""
 def cost_function_no_treatment_diameter(params, x, data, pop_manager):
 
     p = params.valuesdict()
@@ -105,8 +140,5 @@ def cost_function_no_treatment_diameter(params, x, data, pop_manager):
     end = time.time()
     runtime = end - start
     print("Iteration completed in {} seconds.".format(runtime))
-
-    # plt.plot(x,patients_alive)
-    # plt.show()
 
     return (patients_alive - data)

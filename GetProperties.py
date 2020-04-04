@@ -6,18 +6,32 @@ from Constants import STAGE, TUMOR_DENSITY
 import csv
 
 """
+    PropertyManager class, each PropertyManager object is associated with a 
+    single property, patient_size, which is an integer.
+
+    It is passed to the cost function and other models provide sampling 
+    methods from normal and lognomral distributions, and other conversion 
+    methods to convert between values of tumor volume, diameter and cell number
 """
-
-
 class PropertyManager ():
 
-    patient_size = None
+    def __init__(self, patient_size):
+        self.patient_size = patient_size
 
-    def __init__(self, patient_size, ):
-        PropertyManager.patient_size = patient_size
+    """
+        Given the mean and the standard deviation, this method returns an array 
+        of samples from the specified normal distribution, with the number of
+        samples equal to retval.
 
+        `mean`: mean of the normal distribution
+        `std`: standard deviation of the normal distribution
+        `retval`: integer number of values to return
+        `upperbound`, `lowerbound`: upper and lowe bound of returned values
+
+        Requires: `upperbound` >= `lowerbound` 
+    """
     def sample_normal_param(self, mean, std, retval=1, upperbound=None, lowerbound=None):
-
+        
         if (upperbound == None and lowerbound == None):
 
             return np.random.normal(mean, std, retval)
@@ -47,6 +61,8 @@ class PropertyManager ():
             return data
 
         else:
+            
+            assert(upperbound >= lowerbound)
             data = list()
             i = 0
             while i < retval:
@@ -56,7 +72,19 @@ class PropertyManager ():
                     data.append(point[0])
                     i += 1
             return data
+    
+    """
+        Given the mean and the standard deviation, this method returns an array 
+        of samples from the specified lognormal distribution, with the number of
+        samples equal to retval.
 
+        `mean`: mean of the normal distribution
+        `std`: standard deviation of the normal distribution
+        `retval`: integer number of values to return
+        `upperbound`, `lowerbound`: upper and lowe bound of returned values
+
+        Requires: `upperbound` >= `lowerbound` 
+    """
     def sample_lognormal_param(self, mean, std, retval=1, lowerbound=None, upperbound=None):
 
         if (upperbound == None and lowerbound == None):
@@ -100,7 +128,7 @@ class PropertyManager ():
 
     def get_patient_size(self):
 
-        return PropertyManager.patient_size
+        return self.patient_size
 
     def get_volume_from_diameter(self, diameter_array):
 
@@ -141,7 +169,22 @@ class PropertyManager ():
 
         return diameter_array
 
+"""
+    Given the location of a csv file, a patient population is generated via 
+    random sampling, and the generated csv file has the form that each row 
+    represents a patient, each the columns have values representing tumor 
+    diameter in cm, growth rate, and carrying capacity in cm
 
+    csv_path: string specifying the path to save the csv file generate, 
+              including the name of the csv file
+    params: Parameters object containing the following Parameter objects:
+        mean_growth_rate = p['mean_growth_rate']
+        std_growth_rate = p['std_growth_rate']
+        carrying_capacity = p['carrying_capacity']
+        mean_tumor_diameter = p['mean_tumor_diameter']
+        std_tumor_diameter = p['std_tumor_diameter']
+    pop_manager: PropertyManager object
+"""
 def generate_csv(csv_path, params, pop_manager):
 
     p = params.valuesdict()

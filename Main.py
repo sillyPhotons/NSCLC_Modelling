@@ -23,15 +23,14 @@ def run(cost_function, params, fcn_args):
 
 
 sampling_range = [0, 60]
-monte_carlo_patient_size = 100
+monte_carlo_patient_size = 1000
 pop_manager = gp.PropertyManager(monte_carlo_patient_size)
 res_manager = ResultManager()
 
 params = Parameters()
 params.add('mean_growth_rate', value=7.00*10**-5, min=0, vary=True)
 params.add('std_growth_rate', value=7.23*10**-3, min=0, vary=True)
-params.add('carrying_capacity',
-           value=30, min=0)
+params.add('carrying_capacity', value=30, min=0, vary = True)
 # params.add('carrying_capacity',
 #            value=pop_manager.get_tumor_cell_number_from_diameter(30), min=0)
 params.add('mean_tumor_diameter', value=2.5, vary=False, min=0, max=5)
@@ -60,7 +59,7 @@ res_manager.record_simulation(result,
                               ResultObj(plt.step, x, data, "Months",
                                         "Proportion of Patients Alive", curve_label="Data", label="Data", color="black", alpha=0.7),
                               ResultObj(plt.step, x, data + result.residual, "Months",
-                                        "Proportion of Patients Alive", curve_label="Model", label="Model", alpha=0.7),
+                                        "Proportion of Patients Alive", curve_label="{} Patient Model".format(monte_carlo_patient_size), label="{} Patient Model".format(monte_carlo_patient_size), alpha=0.7),
                               ResultObj(plt.step, px, py, "Months", "Proportion of Patients Alive",
                                         curve_label="{} Patients Model Prediction".format(pop_manager2.get_patient_size()), label="{} Patients Model Prediction".format(pop_manager2.get_patient_size()), alpha=0.7),
                               comment="stage_[1]"
