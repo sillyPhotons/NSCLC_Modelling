@@ -7,7 +7,7 @@ import numpy as np
 from lmfit import Minimizer, Parameters, report_fit
 import time
 from CostFunction import cost_function_no_treatment, cost_function_no_treatment_diameter
-from Model import gompertz_ode, predict_no_treatment, predict_volume_doubling_time
+from Model import gompertz_ode, predict_no_treatment, predict_volume_doubling_time,predict_no_treatment_diameter
 import GetProperties as gp
 import ReadData as rd
 import matplotlib.pyplot as plt
@@ -61,7 +61,7 @@ result = run(cost_function_no_treatment_diameter, params,
              fcn_args=(x, data, pop_manager))
 
 pop_manager2 = gp.PropertyManager(1432)
-px, py = predict_no_treatment(
+px, py = predict_no_treatment_diameter(
     result.params, np.arange(sampling_range[0], sampling_range[1] + 0.1, 0.1), pop_manager2)
 
 # vdt = predict_volume_doubling_time(result.params, np.arange(

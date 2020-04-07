@@ -2,12 +2,12 @@ import numpy as np
 from lmfit import Minimizer, Parameters, report_fit
 import time
 from CostFunction import cost_function_no_treatment
-from Model import gompertz_ode, predict_no_treatment, predict_volume_doubling_time
+from Model import gompertz_ode, predict_no_treatment, predict_volume_doubling_time, predict_no_treatment_diameter
 import GetProperties as gp
 import ReadData as rd
 import matplotlib.pyplot as plt
 from Result import ResultObj, ResultManager
-
+import Constants
 
 def run(cost_function, params, fcn_args):
 
@@ -31,7 +31,7 @@ params = Parameters()
 params.add('mean_growth_rate', value=7.00*10**-5, min=0, vary=False)
 params.add('std_growth_rate', value=7.23*10**-3, min=0, vary=False)
 params.add('carrying_capacity',
-           value=30, min=0, vary=False)
+           value=pop_manager.get_tumor_cell_number_from_diameter(30), min=0, vary=False)
 params.add('mean_tumor_diameter', value=1.72, vary=False, min=0, max=5)
 params.add('std_tumor_diameter', value=4.70, vary=False, min=0, max=5)
 
