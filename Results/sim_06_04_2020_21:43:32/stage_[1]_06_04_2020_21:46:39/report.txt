@@ -1,0 +1,17 @@
+[[Fit Statistics]]
+    # fitting method   = Powell
+    # function evals   = 181
+    # data points      = 60
+    # variables        = 2
+    chi-square         = 0.17183166
+    reduced chi-square = 0.00296261
+    Akaike info crit   = -347.335073
+    Bayesian info crit = -343.146383
+[[Variables]]
+    mean_growth_rate:     0.00807213 +/- 0.00821920 (101.82%) (init = 7e-05)
+    std_growth_rate:      0.21284254 +/- 0.00922176 (4.33%) (init = 0.00723)
+    carrying_capacity:    8.199557e+12 (fixed)
+    mean_tumor_diameter:  1.72 (fixed)
+    std_tumor_diameter:   4.7 (fixed)
+[[Correlations]] (unreported correlations are < 0.100)
+    C(mean_growth_rate, std_growth_rate) = -0.400

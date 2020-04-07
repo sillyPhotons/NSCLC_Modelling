@@ -7,7 +7,7 @@ import numpy as np
 from lmfit import Minimizer, Parameters, report_fit
 import time
 from CostFunction import cost_function_no_treatment, cost_function_no_treatment_diameter
-from Model import gompertz_ode, predict_no_treatment, predict_volume_doubling_time,predict_no_treatment_diameter
+from Model import gompertz_ode, predict_no_treatment, predict_volume_doubling_time, predict_no_treatment_diameter
 import GetProperties as gp
 import ReadData as rd
 import matplotlib.pyplot as plt
@@ -22,6 +22,8 @@ from Result import ResultObj, ResultManager
     params: Parameters object to be passed into the `cost_function`
     fcn_args: arugments for the cost_function
 """
+
+
 def run(cost_function, params, fcn_args):
 
     start = time.time()
@@ -34,34 +36,35 @@ def run(cost_function, params, fcn_args):
 
     return result
 
+
 # Determine the domain of KMSc curve. [0,60] means from month 0 to month 60
 sampling_range = [0, 60]
 # The number of patients to generate for the minization of the cost function
-monte_carlo_patient_size = 1000
+monte_carlo_patient_size = 10000
 pop_manager = gp.PropertyManager(monte_carlo_patient_size)
 res_manager = ResultManager()
 
-# Parameters object, we add Parameter objects to it, and we can specify whether 
-# that Parameter object can vary, and provide bounds to the value of the 
+# Parameters object, we add Parameter objects to it, and we can specify whether
+# that Parameter object can vary, and provide bounds to the value of the
 # estimated parameters
 params = Parameters()
 params.add('mean_growth_rate', value=7.00*10**-5, min=0, vary=True)
 params.add('std_growth_rate', value=7.23*10**-3, min=0, vary=True)
-params.add('carrying_capacity', value=30, min=0, vary = True)
-# params.add('carrying_capacity',
-#            value=pop_manager.get_tumor_cell_number_from_diameter(30), min=0)
-params.add('mean_tumor_diameter', value=2.5, vary=False, min=0, max=5)
-params.add('std_tumor_diameter', value=2.5, vary=False, min=0, max=5)
+# params.add('carrying_capacity', value=30, min=0, vary=False)
+params.add('carrying_capacity',
+           value=pop_manager.get_tumor_cell_number_from_diameter(30), min=0, vary = False)
+params.add('mean_tumor_diameter', value=1.72, vary=False, min=0, max=5)
+params.add('std_tumor_diameter', value=4.70, vary=False, min=0, max=5)
 
 # Read the data
 dat = np.loadtxt("./Data/stage1Better.csv", delimiter=',')
 x, data = rd.read_file(dat)
 
-result = run(cost_function_no_treatment_diameter, params,
+result = run(cost_function_no_treatment, params,
              fcn_args=(x, data, pop_manager))
 
 pop_manager2 = gp.PropertyManager(1432)
-px, py = predict_no_treatment_diameter(
+px, py = predict_no_treatment(
     result.params, np.arange(sampling_range[0], sampling_range[1] + 0.1, 0.1), pop_manager2)
 
 # vdt = predict_volume_doubling_time(result.params, np.arange(
@@ -70,7 +73,7 @@ px, py = predict_no_treatment_diameter(
 # plt.hist(vdt,100,density=True)
 # plt.show()
 
-# Passign ResultObj into the ResultManager object, where they are plotted and 
+# Passign ResultObj into the ResultManager object, where they are plotted and
 # saved
 res_manager.record_simulation(result,
                               ResultObj(plt.step, x, data, "Months",

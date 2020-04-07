@@ -22,14 +22,14 @@ def run(cost_function, params, fcn_args):
     return result
 
 
-sampling_range = [0, 200]
+sampling_range = [0, 60]
 monte_carlo_patient_size = 1000
 pop_manager = gp.PropertyManager(monte_carlo_patient_size)
 res_manager = ResultManager()
 
 params = Parameters()
-params.add('mean_growth_rate', value=7.00*10**-5, min=0, vary=False)
-params.add('std_growth_rate', value=7.23*10**-3, min=0, vary=False)
+params.add('mean_growth_rate', value=7.00*10**-5*np.pi**3, min=0, vary=False)
+params.add('std_growth_rate', value=7.23*10**-3*np.pi**3, min=0, vary=False)
 params.add('carrying_capacity',
            value=pop_manager.get_tumor_cell_number_from_diameter(30), min=0, vary=False)
 params.add('mean_tumor_diameter', value=1.72, vary=False, min=0, max=5)
