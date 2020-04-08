@@ -10,9 +10,8 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import csv
 
-mpl.rcParams["font.family"] = "FreeSerif"
 plt.rc("text", usetex=True)
-plt.figure(dpi=100)
+plt.rcParams['font.family'] = 'serif'
 
 
 """
@@ -117,4 +116,5 @@ class ResultManager():
             plt.xlabel("Months")
             plt.ylabel("Proportion of Patients Alive")
         plt.legend()
-        plt.savefig(path + "/plot.pdf")
+        plt.show()
+        # plt.savefig(path + "/plot.pdf")

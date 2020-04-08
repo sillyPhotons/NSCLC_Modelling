@@ -2,23 +2,25 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
 import matplotlib as mpl
-from Constants import STAGE, TUMOR_DENSITY
+from Constants import TUMOR_DENSITY
 import csv
 
-"""
+
+class PropertyManager ():
+    """
     PropertyManager class, each PropertyManager object is associated with a 
     single property, patient_size, which is an integer.
 
     It is passed to the cost function and other models provide sampling 
     methods from normal and lognomral distributions, and other conversion 
     methods to convert between values of tumor volume, diameter and cell number
-"""
-class PropertyManager ():
+    """
 
     def __init__(self, patient_size):
         self.patient_size = patient_size
 
-    """
+    def sample_normal_param(self, mean, std, retval=1, upperbound=None, lowerbound=None):
+        """
         Given the mean and the standard deviation, this method returns an array 
         of samples from the specified normal distribution, with the number of
         samples equal to retval.
@@ -29,9 +31,8 @@ class PropertyManager ():
         `upperbound`, `lowerbound`: upper and lowe bound of returned values
 
         Requires: `upperbound` >= `lowerbound` 
-    """
-    def sample_normal_param(self, mean, std, retval=1, upperbound=None, lowerbound=None):
-        
+        """
+
         if (upperbound == None and lowerbound == None):
 
             return np.random.normal(mean, std, retval)
@@ -73,7 +74,9 @@ class PropertyManager ():
                     i += 1
             return data
     
-    """
+    
+    def sample_lognormal_param(self, mean, std, retval=1, lowerbound=None, upperbound=None):
+        """
         Given the mean and the standard deviation, this method returns an array 
         of samples from the specified lognormal distribution, with the number of
         samples equal to retval.
@@ -84,8 +87,7 @@ class PropertyManager ():
         `upperbound`, `lowerbound`: upper and lowe bound of returned values
 
         Requires: `upperbound` >= `lowerbound` 
-    """
-    def sample_lognormal_param(self, mean, std, retval=1, lowerbound=None, upperbound=None):
+        """
 
         if (upperbound == None and lowerbound == None):
 
@@ -132,15 +134,11 @@ class PropertyManager ():
 
     def get_volume_from_diameter(self, diameter_array):
 
-        volume_array = (4.*np.pi/24.) * (diameter_array**3)
-
-        return volume_array
+        return 4. / 3. *np.pi * (diameter_array / 2.) **3
 
     def get_diameter_from_volume(self, volume_array):
 
-        diameter_array = np.cbrt((24./(4*np.pi)) * volume_array)
-
-        return diameter_array
+        return np.cbrt((volume_array / (4./3. * np.pi))) * 2.
 
     def get_tumor_cell_number_from_diameter(self, diameter_array):
 
@@ -169,7 +167,8 @@ class PropertyManager ():
 
         return diameter_array
 
-"""
+def generate_csv(csv_path, params, pop_manager):
+    """
     Given the location of a csv file, a patient population is generated via 
     random sampling, and the generated csv file has the form that each row 
     represents a patient, each the columns have values representing tumor 
@@ -184,8 +183,7 @@ class PropertyManager ():
         mean_tumor_diameter = p['mean_tumor_diameter']
         std_tumor_diameter = p['std_tumor_diameter']
     pop_manager: PropertyManager object
-"""
-def generate_csv(csv_path, params, pop_manager):
+    """
 
     p = params.valuesdict()
     mean_growth_rate = p['mean_growth_rate']

@@ -2,63 +2,76 @@
     This file contains the implementation of equations and models in Geng's 
     paper, which are used by the Main file, or the CostFunction file 
 """
+import logging
 import numpy as np
 import matplotlib.pyplot as plt
 from lmfit import minimize, Parameters
 from scipy.integrate import odeint
 from ReadData import read_file
-from Constants import DEATH_DIAMETER
+from Constants import DEATH_DIAMETER, RESOLUTION, PREDICT_RESULUTION
 import time
 
-"""
+
+def discrete_time_tumor_volume_GENG():
+    """
+    Discrete time formulation of tumor volume function as seen in: 
+    https://www.nature.com/articles/s41598-018-30761-7
+    """
+
+
+def discrete_time_tumor_volume(previous_volume, growth_rate, carrying_capacity, h=RESOLUTION, noise=0):
+    """
+    Discrete time formulation of tumor volume via linear approximation
+    """
+    return previous_volume + h * previous_volume * (growth_rate * np.log(carrying_capacity / previous_volume) + noise)
+
+
+def gompertz_ode(N, t, growth_rate, carrying_capacity):
+    """
     Evaluates the right hand side of Equation 1. 
 
     N: A double value scalar
     t: numpy array representing time
     growth_rate: a scalar
     carrying_capacity: a scalar
-"""
-
-
-def gompertz_ode(N, t, growth_rate, carrying_capacity):
+    """
 
     dNdt = growth_rate*N*np.log(carrying_capacity/N)
 
     return dNdt
 
 
-"""
+def gompertz_analytical(N0, t, growth_rate, carrying_capacity):
+    """
     Returns a numpy array of gompertz equation evaluated at time = elements of provided parameter t.
 
     N0: Initial value at time = t[0]
     t: numpy array representing time
     growth_rate: scalar
     carrying_capacity: double scalar
-"""
+    """
 
-
-def gompertz_analytical(N0, t, growth_rate, carrying_capacity):
     # t = np.array(t)
     N = carrying_capacity * \
         np.exp(np.log(N0/carrying_capacity)*np.exp(-1.*growth_rate*t))
     return N
 
 
-"""
+def volume_doubling_time(t, N):
+    """
     Given t and N as numpy arrays, computes the volume doubling time of a
     patient using equation (2) in Geng's paper.
 
     Requires: t must contain an element equal to 12, correponding to 12 months
               t and N are numpy arrays
-"""
-def volume_doubling_time(t, N):
-
+    """
     index = np.where(t == 12.0)[0]
 
     return (365)*np.log(2) / np.log(N[index]/N[0])
 
 
-"""
+def predict_volume_doubling_time(params, x, pop_manager):
+    """
     Returns a list of volume doubling time evaluated for each patient generated
     by the parameters specified by `params`. Can be used to plot the histogram 
     of volume doubling times (VDTs)
@@ -72,8 +85,7 @@ def volume_doubling_time(t, N):
         std_tumor_diameter
     x: numpy array representing time
     pop_manager: PropertyManager object
-"""
-def predict_volume_doubling_time(params, x, pop_manager):
+    """
 
     p = params.valuesdict()
     mean_growth_rate = p['mean_growth_rate']
@@ -101,7 +113,8 @@ def predict_volume_doubling_time(params, x, pop_manager):
     return VDT_hist
 
 
-"""
+def predict_no_treatment_diameter(params, x, pop_manager):
+    """
     Given a fixed set of parameters, an array representing time for which this 
     model is evaluation on, and a PropertyManager object, returns the time array
     and the result array of no treatment received model
@@ -115,9 +128,7 @@ def predict_volume_doubling_time(params, x, pop_manager):
         std_tumor_diameter
     x: numpy array representing time
     pop_manager: PropertyManager object
-"""
-def predict_no_treatment_diameter(params, x, pop_manager):
-
+    """
     p = params.valuesdict()
     mean_growth_rate = p['mean_growth_rate']
     std_growth_rate = p['std_growth_rate']
@@ -160,6 +171,7 @@ def predict_no_treatment_diameter(params, x, pop_manager):
 
     return x, patients_alive
 
+
 def predict_no_treatment(params, x, pop_manager):
 
     p = params.valuesdict()
@@ -184,27 +196,28 @@ def predict_no_treatment(params, x, pop_manager):
         cell_number = pop_manager.get_tumor_cell_number_from_diameter(
             tumor_diameter)
 
-        solved_cell_number = gompertz_analytical(cell_number, x, growth_rate, carrying_capacity)
-        
+        solved_cell_number = gompertz_analytical(
+            cell_number, x, growth_rate, carrying_capacity)
+
         # odeint(gompertz_ode, cell_number, x, args=(
         #     growth_rate, carrying_capacity))
 
         solved_diameter = pop_manager.get_diameter_from_tumor_cell_number(
             solved_cell_number)
-        
+
         # plt.plot(x, solved_diameter)
         # plt.show()
 
         try:
             death_time = next(x for x, val in enumerate(solved_diameter)
-                                if val >= DEATH_DIAMETER)
+                              if val >= DEATH_DIAMETER)
 
         except:
             death_time = None
 
         if (death_time is not None):
             patients_alive = [(patients_alive[num] - 1) if num >=
-                                death_time else patients_alive[num] for num in range(len(x))]
+                              death_time else patients_alive[num] for num in range(len(x))]
 
     patients_alive = np.array(patients_alive)
     patients_alive = patients_alive/patients_alive[0]
@@ -214,7 +227,17 @@ def predict_no_treatment(params, x, pop_manager):
 
     return x, patients_alive
 
-def predict_no_treatment_volume(params, x, data, pop_manager):
+
+def predict_discrete_time_volume(params, x, pop_manager):
+    """
+    `x`: corresponds to months
+
+    Requires: 
+        Difference between consecutive elements of data must be > 0.1 
+    """
+    start = time.time()
+
+    from scipy.stats import truncnorm
 
     p = params.valuesdict()
     mean_growth_rate = p['mean_growth_rate']
@@ -226,44 +249,64 @@ def predict_no_treatment_volume(params, x, data, pop_manager):
     patient_size = pop_manager.get_patient_size()
     patients_alive = [patient_size] * len(x)
 
-    start = time.time()
+    lowerbound = (np.log(params['mean_tumor_diameter'].min) - mean_tumor_diameter) / std_tumor_diameter
+    upperbound = (np.log(params['mean_tumor_diameter'].max) - mean_tumor_diameter) / std_tumor_diameter
+
+    norm_rvs = truncnorm.rvs(lowerbound, upperbound, size=patient_size)
+
+    initial_diameter = list(np.exp(
+        (norm_rvs * std_tumor_diameter) + mean_tumor_diameter))
+
+    initial_volume = pop_manager.get_volume_from_diameter(
+        np.array(initial_diameter))
+
+    print(initial_volume)
+
+    growth_rates = pop_manager.sample_normal_param(
+        mean=mean_growth_rate, std=std_growth_rate, retval=patient_size, lowerbound=0, upperbound=None)
+
+    t = np.arange(x[0], x[-1], PREDICT_RESULUTION)
+    num_steps = t.size
+
+    death_volume = pop_manager.get_volume_from_diameter(DEATH_DIAMETER)
+    cancer_volume = np.zeros((patient_size, num_steps))
 
     for num in range(patient_size):
 
-        tumor_diameter = pop_manager.sample_lognormal_param(
-            mean=mean_tumor_diameter, std=std_tumor_diameter, retval=1, lowerbound=0.3, upperbound=5)[0]
-        growth_rate = pop_manager.sample_normal_param(
-            mean=mean_growth_rate, std=std_growth_rate, retval=1, lowerbound=0, upperbound=None)[0]
+        if (num % 100 == 0):
+            logging.info("Simulating Patient {}".format(num))
 
-        cell_volume = pop_manager.get_volume_from_diameter(
-            tumor_diameter)
+        cancer_volume[num, 0] = initial_volume[num]
 
-        solved_volume = gompertz_analytical(cell_volume, x, growth_rate, carrying_capacity)
-        
-        # odeint(gompertz_ode, cell_number, x, args=(
-        #     growth_rate, carrying_capacity))
+        death_time = None
+        for i in range(1, num_steps):
 
-        solved_diameter = pop_manager.get_diameter_from_tumor_cell_number(
-            solved_volume)
-        
+            cancer_volume[num, i] = discrete_time_tumor_volume(
+                cancer_volume[num, i - 1], growth_rates[num], carrying_capacity, h=PREDICT_RESULUTION)
+
+            if cancer_volume[num, i] > death_volume:
+                cancer_volume[num, i] = death_volume
+                death_time = i
+
+                break
+
         # plt.plot(x, solved_diameter)
         # plt.show()
 
-        try:
-            death_time = next(x for x, val in enumerate(solved_diameter)
-                                if val >= DEATH_DIAMETER)
-
-        except:
-            death_time = None
-
         if (death_time is not None):
-            patients_alive = [(patients_alive[num] - 1) if num >=
-                                death_time else patients_alive[num] for num in range(len(x))]
+            death_time = t[death_time]
+            logging.info("Patient death at month: {}".format(death_time))
+
+            patients_alive = [(patients_alive[k] - 1) if k >=
+                              death_time else patients_alive[k] for k in range(len(x))]
 
     patients_alive = np.array(patients_alive)
     patients_alive = patients_alive/patients_alive[0]
+
     end = time.time()
     runtime = end - start
-    print("Predictive model evaluated in {} seconds.".format(runtime))
+
+    logging.info(
+        "Minimization Iteration completed in {} seconds.".format(runtime))
 
     return x, patients_alive
