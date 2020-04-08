@@ -116,5 +116,6 @@ class ResultManager():
             plt.xlabel("Months")
             plt.ylabel("Proportion of Patients Alive")
         plt.legend()
-        plt.show()
-        # plt.savefig(path + "/plot.pdf")
+        # plt.show()
+        plt.savefig(path + "/plot.pdf")
+        plt.close()

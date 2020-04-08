@@ -18,6 +18,7 @@ class PropertyManager ():
 
     def __init__(self, patient_size):
         self.patient_size = patient_size
+        self.count = 0 # utility variable 
 
     def sample_normal_param(self, mean, std, retval=1, upperbound=None, lowerbound=None):
         """

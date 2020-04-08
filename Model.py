@@ -260,21 +260,21 @@ def predict_discrete_time_volume(params, x, pop_manager):
     initial_volume = pop_manager.get_volume_from_diameter(
         np.array(initial_diameter))
 
-    print(initial_volume)
-
     growth_rates = pop_manager.sample_normal_param(
         mean=mean_growth_rate, std=std_growth_rate, retval=patient_size, lowerbound=0, upperbound=None)
 
-    t = np.arange(x[0], x[-1], PREDICT_RESULUTION)
-    num_steps = t.size
+    num_steps = x.size
 
     death_volume = pop_manager.get_volume_from_diameter(DEATH_DIAMETER)
     cancer_volume = np.zeros((patient_size, num_steps))
 
+    pop_manager.count = 0
     for num in range(patient_size):
 
-        if (num % 100 == 0):
+        if (num % 100 == 0 and num != 0):
+            logging.info("\U0001F637 {} Patients Died".format(pop_manager.count))
             logging.info("Simulating Patient {}".format(num))
+            pop_manager.count = 0
 
         cancer_volume[num, 0] = initial_volume[num]
 
@@ -282,21 +282,19 @@ def predict_discrete_time_volume(params, x, pop_manager):
         for i in range(1, num_steps):
 
             cancer_volume[num, i] = discrete_time_tumor_volume(
-                cancer_volume[num, i - 1], growth_rates[num], carrying_capacity, h=PREDICT_RESULUTION)
+                cancer_volume[num, i - 1], growth_rates[num], carrying_capacity, h=RESOLUTION)
 
             if cancer_volume[num, i] > death_volume:
                 cancer_volume[num, i] = death_volume
                 death_time = i
-
+                pop_manager.count += 1
                 break
 
         # plt.plot(x, solved_diameter)
         # plt.show()
 
         if (death_time is not None):
-            death_time = t[death_time]
-            logging.info("Patient death at month: {}".format(death_time))
-
+            death_time = x[death_time]
             patients_alive = [(patients_alive[k] - 1) if k >=
                               death_time else patients_alive[k] for k in range(len(x))]
 
@@ -309,4 +307,6 @@ def predict_discrete_time_volume(params, x, pop_manager):
     logging.info(
         "Minimization Iteration completed in {} seconds.".format(runtime))
 
-    return x, patients_alive
+    months = [num / 31 for num in x]
+
+    return months, patients_alive
