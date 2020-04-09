@@ -13,10 +13,11 @@ import logging
 import numpy as np
 from lmfit import minimize, Parameters
 from scipy.integrate import odeint
-from Model import gompertz_ode, gompertz_analytical, discrete_time_tumor_volume
+from Model import gompertz_ode, gompertz_analytical, euler_tumor_volume, rk4_tumor_volume
 import matplotlib.pyplot as plt
 from Constants import DEATH_DIAMETER, RESOLUTION
 import time
+from scipy.stats import truncnorm
 
 """
     Returns the residual of model and data, given a Parameters object, the xy 
@@ -209,13 +210,18 @@ def cost_function_no_treatment_volume(params, x, data, pop_manager):
     return (patients_alive - data)
 
 
-def cost_function_discrete_time_volume(params, x, data, pop_manager):
+def cost_function(params, x, data, pop_manager, func_pointer):
     """
-    `x`: corresponds to months
+    Finds the residual between the model and the data. The model's unit of time is in days. 
 
-    Requires: 
-        Difference between consecutive elements of data must be > 0.1 
+    Keyword arguments:
+    `x` -- numpy array representing the domain of `data`
+    `data`-- numpy array representing actual data
+    `pop_manager`-- `PropertyManager` object
+    `func_pointer`-- pointer/reference to a discrete time stepping function
     """
+    start = time.time()
+
     p = params.valuesdict()
     mean_growth_rate = p['mean_growth_rate']
     std_growth_rate = p['std_growth_rate']
@@ -225,10 +231,27 @@ def cost_function_discrete_time_volume(params, x, data, pop_manager):
 
     patient_size = pop_manager.get_patient_size()
     patients_alive = [patient_size] * len(x)
-    start = time.time()
+    
+    ######################################################################
+    lowerbound = (np.log(params['mean_tumor_diameter'].min) - mean_tumor_diameter) / std_tumor_diameter
+    upperbound = (np.log(params['mean_tumor_diameter'].max) - mean_tumor_diameter) / std_tumor_diameter
 
-    initial_diameter = pop_manager.sample_lognormal_param(
-        mean=mean_tumor_diameter, std=std_tumor_diameter, retval=patient_size, lowerbound=params['mean_tumor_diameter'].min, upperbound=params['mean_tumor_diameter'].max)
+    norm_rvs = truncnorm.rvs(lowerbound, upperbound, size=patient_size)
+
+    initial_diameter = list(np.exp(
+        (norm_rvs * std_tumor_diameter) + mean_tumor_diameter))
+    ######################################################################
+
+    # ######################################################################
+    # lowerbound = params['mean_tumor_diameter'].min
+    # upperbound = params['mean_tumor_diameter'].max
+
+    # initial_diameter = pop_manager.sample_lognormal_param(mean_tumor_diameter,
+    #                                                       std_tumor_diameter,
+    #                                                       retval=patient_size,
+    #                                                       lowerbound=lowerbound,
+    #                                                       upperbound=upperbound)
+    # ######################################################################
 
     initial_volume = pop_manager.get_volume_from_diameter(np.array(initial_diameter))
 
@@ -252,7 +275,7 @@ def cost_function_discrete_time_volume(params, x, data, pop_manager):
 
         for i in range(1, num_steps):
 
-            cancer_volume[num, i] = discrete_time_tumor_volume(cancer_volume[num, i - 1], growth_rates[num], carrying_capacity)
+            cancer_volume[num, i] = euler_tumor_volume(cancer_volume[num, i - 1], growth_rates[num], carrying_capacity)
 
             if cancer_volume[num, i] > death_volume:
                 cancer_volume[num, i] = death_volume

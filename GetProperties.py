@@ -212,8 +212,28 @@ def generate_csv(csv_path, params, pop_manager):
 
 
 if __name__ == "__main__":
-    pop_man = PropertyManager(10)
+
+    from Constants import REFER_TUMOR_SIZE_DIST
+    from scipy.stats import truncnorm
+
+
+    pop_man = PropertyManager(10000)
     size = pop_man.get_patient_size()
-    data = pop_man.sample_lognormal_param(2.5, 2.5, 10000, 0.3, 5)
-    plt.hist(data)
+
+    mu = REFER_TUMOR_SIZE_DIST["3A"][0]
+    sigma = REFER_TUMOR_SIZE_DIST["3A"][1]
+    lb = REFER_TUMOR_SIZE_DIST["3A"][2]
+    up = REFER_TUMOR_SIZE_DIST["3A"][3]
+
+    data = pop_man.sample_lognormal_param(mu, sigma, 10000, lb, up)
+    plt.hist(data, 500, density = True)
+    plt.show()
+    plt.close()
+
+    lowerbound = (np.log(lb) - mu) / sigma
+    upperbound = (np.log(up) - mu) / sigma
+
+    norm_rvs = truncnorm.rvs(lowerbound, upperbound, size=size)
+    initial_diameter = list(np.exp((norm_rvs * sigma) + mu))
+    plt.hist(initial_diameter, 500, density = True)
     plt.show()
