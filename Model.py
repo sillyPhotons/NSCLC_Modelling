@@ -10,9 +10,6 @@ from scipy.integrate import odeint
 from ReadData import read_file
 from Constants import DEATH_DIAMETER, RESOLUTION
 import time
-import ray
-
-ray.init()
 
 def discrete_time_tumor_volume_GENG(previous_volume, growth_rate, carrying_capacity, h=RESOLUTION, noise=0):
     """
@@ -249,28 +246,6 @@ def predict_no_treatment(params, x, pop_manager):
 
     return x, patients_alive
 
-
-@ray.remote
-def patient(initial_volume, growth_rate, carrying_capacity, death_volume,num_steps, func_pointer):
-
-    cancer_volume = np.zeros(num_steps)
-    cancer_volume[0] = initial_volume
-
-    death_time = None
-    for i in range(1, num_steps):
-
-        cancer_volume[i] = func_pointer(
-            cancer_volume[i - 1], growth_rate, carrying_capacity, h=RESOLUTION)
-
-        if cancer_volume[i] > death_volume:
-            cancer_volume[i] = death_volume
-            death_time = i
-            break
-    
-    if (death_time is not None):
-
-        return death_time
-
 def predict_KMSC_discrete(params, x, pop_manager, func_pointer):
     """
     """
@@ -322,14 +297,14 @@ def predict_KMSC_discrete(params, x, pop_manager, func_pointer):
     death_volume = pop_manager.get_volume_from_diameter(DEATH_DIAMETER)
     cancer_volume = np.zeros((patient_size, num_steps))
 
-    # pop_manager.count = 0
+    pop_manager.count = 0
     for num in range(patient_size):
 
-        # if (num % 100 == 0 and num != 0):
-        #     logging.info(
-        #         "\U0001F637 {} Patients Died".format(pop_manager.count))
-        #     logging.info("Simulating Patient {}".format(num))
-        #     pop_manager.count = 0
+        if (num % 100 == 0 and num != 0):
+            logging.info(
+                "\U0001F637 {} Patients Died".format(pop_manager.count))
+            logging.info("Simulating Patient {}".format(num))
+            pop_manager.count = 0
 
         cancer_volume[num, 0] = initial_volume[num]
 
@@ -342,11 +317,10 @@ def predict_KMSC_discrete(params, x, pop_manager, func_pointer):
             if cancer_volume[num, i] > death_volume:
                 cancer_volume[num, i] = death_volume
                 death_time = i
-                # pop_manager.count += 1
+                pop_manager.count += 1
                 break
 
         if (death_time is not None):
-            # death_time = x[death_time]
             patients_alive = [(patients_alive[k] - 1) if k >=
                               death_time else patients_alive[k] for k in range(num_steps)]
 
@@ -360,93 +334,5 @@ def predict_KMSC_discrete(params, x, pop_manager, func_pointer):
         "Minimization Iteration completed in {} seconds.".format(runtime))
 
     months = [num / 31. for num in x]
-
-    return months, patients_alive
-
-
-def predict_KMSC_continuous(params, x, pop_manager):
-    """
-    """
-    start = time.time()
-
-    from scipy.stats import truncnorm
-
-    p = params.valuesdict()
-    mean_growth_rate = p['mean_growth_rate']
-    std_growth_rate = p['std_growth_rate']
-    carrying_capacity = p['carrying_capacity']
-    mean_tumor_diameter = p['mean_tumor_diameter']
-    std_tumor_diameter = p['std_tumor_diameter']
-
-    patient_size = pop_manager.get_patient_size()
-    patients_alive = [patient_size] * len(x)
-
-    # ######################################################################
-    # lowerbound = (np.log(params['mean_tumor_diameter'].min) -
-    #               mean_tumor_diameter) / std_tumor_diameter
-    # upperbound = (np.log(params['mean_tumor_diameter'].max) -
-    #               mean_tumor_diameter) / std_tumor_diameter
-
-    # norm_rvs = truncnorm.rvs(lowerbound, upperbound, size=patient_size)
-
-    # initial_diameter = list(np.exp(
-    #     (norm_rvs * std_tumor_diameter) + mean_tumor_diameter))
-    # ######################################################################
-
-    ######################################################################
-    lowerbound = params['mean_tumor_diameter'].min
-    upperbound = params['mean_tumor_diameter'].max
-
-    initial_diameter = pop_manager.sample_lognormal_param(mean_tumor_diameter,
-                                                          std_tumor_diameter,
-                                                          retval=patient_size,
-                                                          lowerbound=lowerbound,
-                                                          upperbound=upperbound)
-    ######################################################################
-
-    initial_volume = pop_manager.get_volume_from_diameter(
-        np.array(initial_diameter))
-
-    growth_rates = pop_manager.sample_normal_param(
-        mean=mean_growth_rate, std=std_growth_rate, retval=patient_size, lowerbound=0, upperbound=None)
-
-    death_volume = pop_manager.get_volume_from_diameter(DEATH_DIAMETER)
-
-    pop_manager.count = 0
-    for num in range(patient_size):
-
-        if (num % 100 == 0 and num != 0):
-            logging.info(
-                "\U0001F637 {} Patients Died".format(pop_manager.count))
-            logging.info("Simulating Patient {}".format(num))
-            pop_manager.count = 0
-
-
-        solved_volume = gompertz_analytical(initial_volume[num], x, growth_rates[num], carrying_capacity)
-
-        # odeint(gompertz_ode, initial_volume[num], x, args=(
-        #     growth_rates[num], carrying_capacity))
-        
-        try:
-            death_time = next(x for x, val in enumerate(solved_volume)
-                              if val >= death_volume)
-            pop_manager.count += 1
-        except:
-            death_time = None
-
-        if (death_time is not None):
-            patients_alive = [(patients_alive[num] - 1) if num >=
-                              death_time else patients_alive[num] for num in range(len(x))]
-    
-    patients_alive = np.array(patients_alive)
-    patients_alive = patients_alive/patients_alive[0]
-
-    end = time.time()
-    runtime = end - start
-
-    logging.info(
-        "Minimization Iteration completed in {} seconds.".format(runtime))
-
-    months = [num / 31 for num in x]
 
     return months, patients_alive

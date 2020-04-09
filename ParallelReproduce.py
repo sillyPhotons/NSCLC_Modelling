@@ -7,10 +7,10 @@ from lmfit import Minimizer, Parameters, report_fit
 import Constants
 import Model as m
 import ReadData as rd
+import ParallelModel as pm
 import GetProperties as gp
 from Result import ResultObj, ResultManager
 from CostFunction import cost_function_no_treatment
-
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 
@@ -29,12 +29,12 @@ def run(cost_function, params, fcn_args):
 
 
 sampling_range = [0, 60]
-monte_carlo_patient_size = 1000
+monte_carlo_patient_size = 10000
 pop_manager = gp.PropertyManager(monte_carlo_patient_size)
 res_manager = ResultManager()
 
-# for stage in Constants.REFER_TUMOR_SIZE_DIST.keys():
-for stage in ["4"]:
+for stage in Constants.REFER_TUMOR_SIZE_DIST.keys():
+# for stage in ["4"]:
 
     params = Parameters()
     params.add('mean_growth_rate', value=7*10**-5, min=0, vary=False)
@@ -54,11 +54,15 @@ for stage in ["4"]:
                max=Constants.REFER_TUMOR_SIZE_DIST[stage][3])
 
     dat = np.loadtxt("./Data/stage{}Better.csv".format(stage), delimiter=',')
+    # dat = np.loadtxt("./Data/stage1Better.csv", delimiter=',')
     x, data = rd.read_file(dat)
     x = np.around(x)
 
-    px, py = m.predict_KMSC_discrete(params, np.arange(
-        sampling_range[0], sampling_range[1]*31 + Constants.RESOLUTION, Constants.RESOLUTION), pop_manager, m.rk4_tumor_volume)
+    # px, py = m.predict_KMSC_discrete(params, np.arange(
+    #     sampling_range[0], sampling_range[1]*31 + Constants.RESOLUTION, Constants.RESOLUTION), pop_manager, m.rk4_tumor_volume)
+
+    px, py = pm.predict_KMSC_discrete(params, np.arange(
+        sampling_range[0], sampling_range[1]*31 + Constants.RESOLUTION, Constants.RESOLUTION), pop_manager, m.discrete_time_tumor_volume_GENG)
 
     res_manager.record_prediction(
         ResultObj(plt.step, x, data, "Months",

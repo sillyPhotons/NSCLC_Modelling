@@ -27,5 +27,5 @@ DATA_PATIENT_SIZE = {'1': 1432,
                      "4": 12840}
 
 # Number of months passed per time step
-RESOLUTION = 0.05
+RESOLUTION = 0.01
 
