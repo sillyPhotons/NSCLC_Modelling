@@ -18,7 +18,7 @@ REFER_TUMOR_SIZE_DIST = {'1': [1.72, 4.70, 0.3, 5.0],
                          '2': [1.96, 1.63, 0.3, 13.0],
                          '3A': [1.91, 9.40, 0.3, 13.0],
                          '3B': [2.76, 6.87, 0.3, 13.0],
-                         '4': [12, 8.82, 0.3, 13.0]}
+                         '4': [3.86, 8.82, 0.3, 13.0]}
 
 DATA_PATIENT_SIZE = {'1': 1432,
                      "2": 128,
@@ -27,5 +27,8 @@ DATA_PATIENT_SIZE = {'1': 1432,
                      "4": 12840}
 
 # Number of months passed per time step
-RESOLUTION = 0.01
+RESOLUTION = 0.5
+
+#1.48% survival reduction
+SURVIVAL_REDUCTION = 1.48
 

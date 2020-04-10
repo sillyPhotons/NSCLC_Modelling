@@ -76,17 +76,11 @@ def gompertz_analytical(N0, t, growth_rate, carrying_capacity):
     return N
 
 
-def volume_doubling_time(t, N):
+def volume_doubling_time(V0, V1):
     """
-    Given t and N as numpy arrays, computes the volume doubling time of a
-    patient using equation (2) in Geng's paper.
-
-    Requires: t must contain an element equal to 12, correponding to 12 months
-              t and N are numpy arrays
+    Given the initial tumor volume and volume after 1 year, calculate the volume doubling time
     """
-    index = np.where(t == 12.0)[0]
-
-    return (365)*np.log(2) / np.log(N[index]/N[0])
+    return (365)*np.log(2) / np.log(V1/V0)
 
 
 def predict_volume_doubling_time(params, x, pop_manager):
@@ -95,15 +89,15 @@ def predict_volume_doubling_time(params, x, pop_manager):
     by the parameters specified by `params`. Can be used to plot the histogram 
     of volume doubling times (VDTs)
 
-    params: Parameters object which must contain the following names as 
+    `params`: Parameters object which must contain the following names as 
     Parameter objects
-        mean_growth_rate
-        std_growth_rate
-        carrying_capacity
-        mean_tumor_diameter
-        std_tumor_diameter
-    x: numpy array representing time
-    pop_manager: PropertyManager object
+        `mean_growth_rate`
+        `std_growth_rate`
+        `carrying_capacity`
+        `mean_tumor_diameter`
+        `std_tumor_diameter`
+    `x`: numpy array representing time
+    `pop_manager`: `PropertyManager` object
     """
 
     p = params.valuesdict()
@@ -263,28 +257,28 @@ def predict_KMSC_discrete(params, x, pop_manager, func_pointer):
     patient_size = pop_manager.get_patient_size()
     patients_alive = [patient_size] * len(x)
 
-    # ######################################################################
-    # lowerbound = (np.log(params['mean_tumor_diameter'].min) -
-    #               mean_tumor_diameter) / std_tumor_diameter
-    # upperbound = (np.log(params['mean_tumor_diameter'].max) -
-    #               mean_tumor_diameter) / std_tumor_diameter
-
-    # norm_rvs = truncnorm.rvs(lowerbound, upperbound, size=patient_size)
-
-    # initial_diameter = list(np.exp(
-    #     (norm_rvs * std_tumor_diameter) + mean_tumor_diameter))
-    # ######################################################################
-
     ######################################################################
-    lowerbound = params['mean_tumor_diameter'].min
-    upperbound = params['mean_tumor_diameter'].max
+    lowerbound = (np.log(params['mean_tumor_diameter'].min) -
+                  mean_tumor_diameter) / std_tumor_diameter
+    upperbound = (np.log(params['mean_tumor_diameter'].max) -
+                  mean_tumor_diameter) / std_tumor_diameter
 
-    initial_diameter = pop_manager.sample_lognormal_param(mean_tumor_diameter,
-                                                          std_tumor_diameter,
-                                                          retval=patient_size,
-                                                          lowerbound=lowerbound,
-                                                          upperbound=upperbound)
+    norm_rvs = truncnorm.rvs(lowerbound, upperbound, size=patient_size)
+
+    initial_diameter = list(np.exp(
+        (norm_rvs * std_tumor_diameter) + mean_tumor_diameter))
     ######################################################################
+
+    # ######################################################################
+    # lowerbound = params['mean_tumor_diameter'].min
+    # upperbound = params['mean_tumor_diameter'].max
+
+    # initial_diameter = pop_manager.sample_lognormal_param(mean_tumor_diameter,
+    #                                                       std_tumor_diameter,
+    #                                                       retval=patient_size,
+    #                                                       lowerbound=lowerbound,
+    #                                                       upperbound=upperbound)
+    # ######################################################################
 
     initial_volume = pop_manager.get_volume_from_diameter(
         np.array(initial_diameter))

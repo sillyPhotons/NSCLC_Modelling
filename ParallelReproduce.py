@@ -1,3 +1,4 @@
+import ray
 import time
 import logging
 import numpy as np
@@ -7,15 +8,23 @@ from lmfit import Minimizer, Parameters, report_fit
 import Constants
 import Model as m
 import ReadData as rd
-import ParallelModel as pm
+import ParallelPredict as pp
 import GetProperties as gp
 from Result import ResultObj, ResultManager
-from CostFunction import cost_function_no_treatment
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
-
+ray.init()
 
 def run(cost_function, params, fcn_args):
+    """
+    returns a `MinizerResult` object that represents the results of an 
+    optimization algorithm
+
+    `cost_function`: a callable (cost function) taking a `Parameters` object, 
+        x numpy array, y numpy array, and other parameters
+    `params`: `Parameters` object to be passed into the `cost_function`
+    `fcn_args`: arugments for the `cost_function`
+    """
 
     start = time.time()
     minner = Minimizer(cost_function, params, fcn_args)
@@ -34,7 +43,7 @@ pop_manager = gp.PropertyManager(monte_carlo_patient_size)
 res_manager = ResultManager()
 
 for stage in Constants.REFER_TUMOR_SIZE_DIST.keys():
-# for stage in ["4"]:
+    # for stage in ["1"]:
 
     params = Parameters()
     params.add('mean_growth_rate', value=7*10**-5, min=0, vary=False)
@@ -58,11 +67,17 @@ for stage in Constants.REFER_TUMOR_SIZE_DIST.keys():
     x, data = rd.read_file(dat)
     x = np.around(x)
 
-    # px, py = m.predict_KMSC_discrete(params, np.arange(
-    #     sampling_range[0], sampling_range[1]*31 + Constants.RESOLUTION, Constants.RESOLUTION), pop_manager, m.rk4_tumor_volume)
+    # vdts = pp.predict_VDT(params, np.arange(
+    #     sampling_range[0], sampling_range[1]*31 + Constants.RESOLUTION, Constants.RESOLUTION), pop_manager, m.discrete_time_tumor_volume_GENG)
 
-    px, py = pm.predict_KMSC_discrete(params, np.arange(
-        sampling_range[0], sampling_range[1]*31 + Constants.RESOLUTION, Constants.RESOLUTION), pop_manager, m.discrete_time_tumor_volume_GENG)
+    # plt.hist(vdts, 50, range = [0, 500],density=True, alpha=0.7, rwidth=0.85)
+    # plt.show()
+
+    px, py = pp.predict_KMSC_discrete(params,
+                                      np.arange(
+                                          sampling_range[0], sampling_range[1]*31 + Constants.RESOLUTION, Constants.RESOLUTION),
+                                      pop_manager,
+                                      m.discrete_time_tumor_volume_GENG)
 
     res_manager.record_prediction(
         ResultObj(plt.step, x, data, "Months",
