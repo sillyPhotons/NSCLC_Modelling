@@ -18,7 +18,6 @@ from Constants import DEATH_DIAMETER, RESOLUTION, SURVIVAL_REDUCTION
 import Model as m
 
 
-
 @ray.remote
 def sim_patient_death_time(initial_volume, growth_rate, carrying_capacity, death_volume, num_steps, func_pointer):
     """
@@ -52,12 +51,13 @@ def sim_patient_death_time(initial_volume, growth_rate, carrying_capacity, death
     else:
         return None
 
+
 def predict_KMSC_discrete(params, x, pop_manager, func_pointer):
     """
     Returns the x,y series to plot the KMSC for a patient population. x has units of months, and y is the proportion of patients alive. Every y value is reduced by `SURVIVAL_REDUCTION` found in `Constants.py`, except the point at x = 0.
 
     `param`: `Parameters` object 
-    `x`: time array to find the KMSC curve on
+    `x`: numpy time array to find the KMSC curve on
     `pop_manager`: `PropertyManager` object
     `func_pointer`: a function object. In python, functions are first class objects. Discrete time model of the mode taking `initial_volume`, `growth_rate`, `carrying_capacity` 
 
@@ -117,7 +117,7 @@ def predict_KMSC_discrete(params, x, pop_manager, func_pointer):
 
     growth_rates = pop_manager.sample_normal_param(
         mean=mean_growth_rate, std=std_growth_rate, retval=patient_size, lowerbound=0, upperbound=None)
-    
+
     death_volume = pop_manager.get_volume_from_diameter(DEATH_DIAMETER)
 
     id_list = list()
@@ -137,7 +137,11 @@ def predict_KMSC_discrete(params, x, pop_manager, func_pointer):
                               times else patients_alive[k] for k in range(num_steps)]
 
     patients_alive = np.array(patients_alive)
-    patients_alive = patients_alive/patients_alive[0]
+    patients_alive = (
+        patients_alive/patients_alive[0])*(1 - SURVIVAL_REDUCTION/100.)
+    patients_alive[0] = 1.
+
+    months = x/31.
 
     end = time.time()
     runtime = end - start
@@ -145,10 +149,8 @@ def predict_KMSC_discrete(params, x, pop_manager, func_pointer):
     logging.info(
         "\U0001F637 Minimization Iteration completed in {} seconds.".format(runtime))
 
-    months = [num / 31. if num ==
-              0 else (num / 31.)*(1 - SURVIVAL_REDUCTION/100.) for num in x]
-
     return months, patients_alive
+
 
 @ray.remote
 def sim_patient_one_year(initial_volume, growth_rate, carrying_capacity, death_volume, num_steps, func_pointer):
@@ -171,6 +173,7 @@ def sim_patient_one_year(initial_volume, growth_rate, carrying_capacity, death_v
             cancer_volume[i - 1], growth_rate, carrying_capacity, h=RESOLUTION)
 
     return m.volume_doubling_time(initial_volume, cancer_volume[-1])
+
 
 def predict_VDT(params, x, pop_manager, func_pointer):
     """
@@ -217,7 +220,7 @@ def predict_VDT(params, x, pop_manager, func_pointer):
     #                                                       lowerbound=lowerbound,
     #                                                       upperbound=upperbound)
     # ######################################################################
-    
+
     # ######################################################################
     # lowerbound = params['mean_tumor_diameter'].min
     # upperbound = params['mean_tumor_diameter'].max
@@ -239,18 +242,19 @@ def predict_VDT(params, x, pop_manager, func_pointer):
     growth_rates = pop_manager.sample_normal_param(
         mean=mean_growth_rate, std=std_growth_rate, retval=patient_size, lowerbound=0, upperbound=None)
 
-
     death_volume = pop_manager.get_volume_from_diameter(DEATH_DIAMETER)
     steps_to_one_year = int(365./RESOLUTION)
 
     id_list = list()
     for num in range(patient_size):
 
-        obj_id = sim_patient_one_year.remote(initial_volume[num], growth_rates[num], carrying_capacity, death_volume, steps_to_one_year, func_pointer)
-        
+        obj_id = sim_patient_one_year.remote(
+            initial_volume[num], growth_rates[num], carrying_capacity, death_volume, steps_to_one_year, func_pointer)
+
         id_list.append(obj_id)
 
-    logging.info("Patient simulation complete, fetching volume doubling times.")
+    logging.info(
+        "Patient simulation complete, fetching volume doubling times.")
     vdts = [ray.get(obj_id) for obj_id in id_list]
 
     end = time.time()

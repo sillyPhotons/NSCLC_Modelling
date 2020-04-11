@@ -14,6 +14,7 @@ import Model as m
 import ParallelPredict as pp
 from Constants import DEATH_DIAMETER, RESOLUTION, SURVIVAL_REDUCTION
 
+
 def cost_function(params, x, data, pop_manager, func_pointer):
     """
     Returns the residual of model and data, given a Parameters object, the xy data for a KMSc, a `PropertyManager` object, and a pointer to a discrete time stepping function.
@@ -98,10 +99,15 @@ def cost_function(params, x, data, pop_manager, func_pointer):
     for times in death_times:
         if times is not None:
             patients_alive = [(patients_alive[k] - 1) if x[k] >=
-                              times* RESOLUTION else patients_alive[k] for k in range(xsize)]
+                              times * RESOLUTION else patients_alive[k] for k in range(xsize)]
 
     patients_alive = np.array(patients_alive)
     patients_alive = patients_alive/patients_alive[0]
+
+    patients_alive = np.array(patients_alive)
+    patients_alive = (
+        patients_alive/patients_alive[0]) * (1 - SURVIVAL_REDUCTION/100.)
+    patients_alive[0] = 1.
 
     end = time.time()
     runtime = end - start

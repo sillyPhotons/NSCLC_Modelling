@@ -55,8 +55,8 @@ pop_manager = gp.PropertyManager(monte_carlo_patient_size)
 
 res_manager = ResultManager()
 
-# for stage in Constants.REFER_TUMOR_SIZE_DIST.keys():
-for stage in ["4"]:
+for stage in Constants.REFER_TUMOR_SIZE_DIST.keys():
+# for stage in ["4"]:
     """
     Parameters object, we add Parameter objects to it, and we can specify
     whether that Parameter object can vary, and provide bounds to the value 
@@ -76,7 +76,7 @@ for stage in ["4"]:
                vary=False)
     params.add('mean_tumor_diameter',
                value=Constants.REFER_TUMOR_SIZE_DIST[stage][0],
-               vary=False,
+               vary=True,
                min=Constants.REFER_TUMOR_SIZE_DIST[stage][2],
                max=Constants.REFER_TUMOR_SIZE_DIST[stage][3])
     params.add('std_tumor_diameter',
@@ -109,7 +109,7 @@ for stage in ["4"]:
     # saved
     res_manager.record_simulation(result,
                                 ResultObj(plt.step, x, data, "Months",
-                                            "Proportion of Patients Alive", curve_label="Data", label="Data", color="black", alpha=0.7),
+                                            "Proportion of Patients Alive", curve_label="Stage {} Data".format(stage), label="Stage {} Data".format(stage), color="black", alpha=0.7),
                                 ResultObj(plt.step, x, data + result.residual, "Months",
                                             "Proportion of Patients Alive", curve_label="{} Patient Model".format(monte_carlo_patient_size), label="{} Patient Model".format(monte_carlo_patient_size), alpha=0.7),
                                 # ResultObj(plt.step, px, py, "Months", "Proportion of Patients Alive",
