@@ -90,17 +90,21 @@ if __name__ == "__main__":
     s3A = np.loadtxt("./Data/stage3ABetter.csv", delimiter=',')
     s3B = np.loadtxt("./Data/stage3BBetter.csv", delimiter=',')
     s4 = np.loadtxt("./Data/stage4Better.csv", delimiter=',')
+    radiation = np.loadtxt("./Data/radiotherapy.csv", delimiter=',')
 
     # plot and show the data
-    plot(s1, "Stage 1", "Survival Time [Months]",
-         "Proportion of Patients Alive", "KMSC From Data")
-    plot(s2, "Stage 2", "Survival Time [Months]",
-         "Proportion of Patients Alive", "KMSC From Data")
-    plot(s3A, "Stage 3A", "Survival Time [Months]",
-         "Proportion of Patients Alive", "KMSC From Data")
-    plot(s3B, "Stage 3B", "Survival Time [Months]",
-         "Proportion of Patients Alive", "KMSC From Data")
-    plot(s4, "Stage 4", "Survival Time [Months]",
-         "Proportion of Patients Alive", "KMSC From Data")
+    # plot(s1, "Stage 1", "Survival Time [Months]",
+    #      "Proportion of Patients Alive", "KMSC From Data")
+    # plot(s2, "Stage 2", "Survival Time [Months]",
+    #      "Proportion of Patients Alive", "KMSC From Data")
+    # plot(s3A, "Stage 3A", "Survival Time [Months]",
+    #      "Proportion of Patients Alive", "KMSC From Data")
+    # plot(s3B, "Stage 3B", "Survival Time [Months]",
+    #      "Proportion of Patients Alive", "KMSC From Data")
+    # plot(s4, "Stage 4", "Survival Time [Months]",
+    #      "Proportion of Patients Alive", "KMSC From Data")
+
+
+    plot(radiation, "Radiotherapy", "Survival Time [Months]", "Proportion of Patients Alive", "KMSC From Data")    
     plt.show()
     

@@ -20,15 +20,23 @@ REFER_TUMOR_SIZE_DIST = {'1': [1.72, 4.70, 0.3, 5.0],
                          '3B': [2.76, 6.87, 0.3, 13.0],
                          '4': [3.86, 8.82, 0.3, 13.0]}
 
-DATA_PATIENT_SIZE = {'1': 1432,
-                     "2": 128,
-                     "3A": 1306,
-                     "3B": 7248,
-                     "4": 12840}
+NATURAL_HISTORY_PATIENT_SIZE = {'1': 1432,
+                                "2": 128,
+                                "3A": 1306,
+                                "3B": 7248,
+                                "4": 12840}
+"""
+according tp ref # 27, the radiation therapy only patient group consisted of 6% 
+stage II, 44% stage 3A, and 50% stage 3B
+"""
+RADIATION_ONLY_PATIENT_PERCENTAGE = {'2': 6,
+                                     '3A': 44,
+                                     '3B': 50}
+
+GR_RS_CORRELATION = 0.87
 
 # Number of months passed per time step
 RESOLUTION = 0.5
 
-#1.48% survival reduction
+# 1.48% survival reduction
 SURVIVAL_REDUCTION = 1.48
-
