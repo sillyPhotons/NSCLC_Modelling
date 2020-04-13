@@ -1,3 +1,7 @@
+"""
+    ParallelReproduce.py: This is used to reproduce the results in Geng's paper
+
+"""
 import ray
 import time
 import logging
@@ -32,7 +36,8 @@ def run(cost_function, params, fcn_args):
     report_fit(result.params)
     end = time.time()
     runtime = end - start
-    print("A Total of {} seconds to complete \U0001F606".format(runtime))
+    logging.critical(
+        "A Total of {} seconds to complete \U0001F606".format(runtime))
 
     return result
 
@@ -48,7 +53,6 @@ for stage in Constants.REFER_TUMOR_SIZE_DIST.keys():
     params = Parameters()
     params.add('mean_growth_rate', value=7*10**-5, min=0, vary=False)
     params.add('std_growth_rate', value=7.23*10**-3, min=0, vary=False)
-    # params.add('carrying_capacity', value=30, min=0, vary=False)
     params.add('carrying_capacity',
                value=pop_manager.get_volume_from_diameter(30), min=0, vary=False)
     params.add('mean_tumor_diameter',

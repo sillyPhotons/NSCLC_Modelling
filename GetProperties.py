@@ -18,7 +18,7 @@ class PropertyManager ():
 
     def __init__(self, patient_size):
         self.patient_size = patient_size
-        self.count = 0 # utility variable 
+        self.count = 0  # utility variable
 
     def sample_normal_param(self, mean, std, retval=1, upperbound=None, lowerbound=None):
         """
@@ -63,7 +63,7 @@ class PropertyManager ():
             return data
 
         else:
-            
+
             assert(upperbound >= lowerbound)
             data = list()
             i = 0
@@ -74,8 +74,7 @@ class PropertyManager ():
                     data.append(point[0])
                     i += 1
             return data
-    
-    
+
     def sample_lognormal_param(self, mean, std, retval=1, lowerbound=None, upperbound=None):
         """
         Given the mean and the standard deviation, this method returns an array 
@@ -129,13 +128,46 @@ class PropertyManager ():
                     i += 1
             return data
 
+    def sample_correlated_params(self, param1, param2, corr, retval=1):
+        """
+        Given (mean, sigma, lowerbound, upperbound) of two values, and linear correlation coefficient, samples from a multivariate normal distribution a number of ordered pairs equal to `retval`. The sampled pairs are returned in a single numpy array with dimensions (2 by retval)
+
+        `param1`: numpy array with 2 elements. `param1[0]` is the mean of the parameter, and `param1[1]` is the standard deviation
+        `param2`: numpy array with 2 elements. `param2[0]` is the mean of the parameter, and `param2[1]` is the standard deviation
+        `corr`: linear correlation coefficient of `param1` and `param2`. corr = (covariance of param1 and param2)/((sigma of param1)*(sigma of param 2))
+        `retval`: number of ordered pairs to return 
+        """
+        sigma1 = param1[1]
+        sigma2 = param2[1]
+        lb1, ub1 = param1[2, 3]
+        lb2, ub2 = param1[2, 3]
+        print(lb1, ub1)
+        covariance_matrix = np.array([sigma1**2, corr * sigma1 * sigma2],
+                                     [corr * sigma1 * sigma2, sigma2**2])
+
+        mean_array = np.array([param1[0], param2[0]])
+
+        sampled_params = list()
+
+        while len(sampled_params) < retval:
+
+            pairs = np.random.multivariate_normal(
+                mean_array, covariance_matrix, retval)
+            
+            for num in range(pairs.shape[0]):
+
+                if lb1 < pairs[num, 0] < ub1 and lb2 < pairs[num, 1] < ub2:
+                    sampled_params.append(pairs[num, :])
+        
+        return np.array(sampled_params)
+
     def get_patient_size(self):
 
         return self.patient_size
 
     def get_volume_from_diameter(self, diameter_array):
 
-        return 4. / 3. *np.pi * (diameter_array / 2.) **3
+        return 4. / 3. * np.pi * (diameter_array / 2.) ** 3
 
     def get_diameter_from_volume(self, volume_array):
 
@@ -167,6 +199,7 @@ class PropertyManager ():
         diameter_array = self.get_diameter_from_volume(volume_array)
 
         return diameter_array
+
 
 def generate_csv(csv_path, params, pop_manager):
     """
@@ -203,10 +236,10 @@ def generate_csv(csv_path, params, pop_manager):
         growth_rate = pop_manager.sample_normal_param(
             mean=mean_growth_rate, std=std_growth_rate, retval=pop_manager.patient_size, lowerbound=0, upperbound=None)
 
-
         for num in range(pop_manager.patient_size):
 
-            writer.writerow([tumor_diameter[num], growth_rate[num], carrying_capacity])
+            writer.writerow(
+                [tumor_diameter[num], growth_rate[num], carrying_capacity])
 
     return csv_path
 
@@ -215,7 +248,6 @@ if __name__ == "__main__":
 
     from Constants import REFER_TUMOR_SIZE_DIST
     from scipy.stats import truncnorm
-
 
     pop_man = PropertyManager(10000)
     size = pop_man.get_patient_size()
@@ -226,7 +258,7 @@ if __name__ == "__main__":
     up = REFER_TUMOR_SIZE_DIST["3A"][3]
 
     data = pop_man.sample_lognormal_param(mu, sigma, 10000, lb, up)
-    plt.hist(data, 500, density = True)
+    plt.hist(data, 500, density=True)
     plt.show()
     plt.close()
 
@@ -235,5 +267,5 @@ if __name__ == "__main__":
 
     norm_rvs = truncnorm.rvs(lowerbound, upperbound, size=size)
     initial_diameter = list(np.exp((norm_rvs * sigma) + mu))
-    plt.hist(initial_diameter, 500, density = True)
+    plt.hist(initial_diameter, 500, density=True)
     plt.show()

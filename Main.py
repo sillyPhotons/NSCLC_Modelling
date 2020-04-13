@@ -20,6 +20,7 @@ from Result import ResultObj, ResultManager
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 ray.init()
 
+
 def run(cost_function, params, fcn_args):
     """
     returns a `MinizerResult` object that represents the results of an 
@@ -48,7 +49,7 @@ def run(cost_function, params, fcn_args):
 sampling_range = [0, 60]
 
 # The number of patients to generate for the minization of the cost function
-monte_carlo_patient_size = 1000
+monte_carlo_patient_size = 10000
 
 # Get an instance of a PropertyManager object, and initialize it patient size
 pop_manager = gp.PropertyManager(monte_carlo_patient_size)
@@ -56,7 +57,7 @@ pop_manager = gp.PropertyManager(monte_carlo_patient_size)
 res_manager = ResultManager()
 
 for stage in Constants.REFER_TUMOR_SIZE_DIST.keys():
-# for stage in ["4"]:
+    # for stage in ["4"]:
     """
     Parameters object, we add Parameter objects to it, and we can specify
     whether that Parameter object can vary, and provide bounds to the value 
@@ -68,6 +69,8 @@ for stage in Constants.REFER_TUMOR_SIZE_DIST.keys():
         whether this varies during minimization `vary`
     """
     params = Parameters()
+    # Added so that it shows up in the report file
+    params.add("Resolution", value=Constants.RESOLUTION, vary=False)
     params.add('mean_growth_rate', value=7.00*10**-5, min=0, vary=False)
     params.add('std_growth_rate', value=7.23*10**-3, min=0, vary=False)
     params.add('carrying_capacity',
@@ -76,7 +79,7 @@ for stage in Constants.REFER_TUMOR_SIZE_DIST.keys():
                vary=False)
     params.add('mean_tumor_diameter',
                value=Constants.REFER_TUMOR_SIZE_DIST[stage][0],
-               vary=True,
+               vary=False,
                min=Constants.REFER_TUMOR_SIZE_DIST[stage][2],
                max=Constants.REFER_TUMOR_SIZE_DIST[stage][3])
     params.add('std_tumor_diameter',
@@ -88,12 +91,12 @@ for stage in Constants.REFER_TUMOR_SIZE_DIST.keys():
     dat = np.loadtxt("./Data/stage{}Better.csv".format(stage), delimiter=',')
     x, data = rd.read_file(dat)
     # around the x_coordinates of the data, convert to days
-    x = np.around(x) * 31  
+    x = np.around(x) * 31
 
     # Run minimization
     result = run(cf.cost_function, params,
-                 fcn_args=(x, data, pop_manager, 
-                 m.discrete_time_tumor_volume_GENG))
+                 fcn_args=(x, data, pop_manager,
+                           m.discrete_time_tumor_volume_GENG))
 
     # pop_manager2 = gp.PropertyManager(1432)
     # px, py = predict_no_treatment_volume(
@@ -108,15 +111,16 @@ for stage in Constants.REFER_TUMOR_SIZE_DIST.keys():
     # Passign ResultObj into the ResultManager object, where they are plotted and
     # saved
     res_manager.record_simulation(result,
-                                ResultObj(plt.step, x, data, "Months",
+                                  ResultObj(plt.step, x, data, "Months",
                                             "Proportion of Patients Alive", curve_label="Stage {} Data".format(stage), label="Stage {} Data".format(stage), color="black", alpha=0.7),
-                                ResultObj(plt.step, x, data + result.residual, "Months",
+                                  ResultObj(plt.step, x, data + result.residual, "Months",
                                             "Proportion of Patients Alive", curve_label="{} Patient Model".format(monte_carlo_patient_size), label="{} Patient Model".format(monte_carlo_patient_size), alpha=0.7),
-                                # ResultObj(plt.step, px, py, "Months", "Proportion of Patients Alive",
-                                # curve_label="{} Patients Model Prediction".format(pop_manager2.get_patient_size()), label="{} Patients Model Prediction".format
-                                # (pop_manager2.get_patient_size()), alpha=0.7),
-                                comment="stage_[{}]_Minimization".format(stage)
-                                )
+                                  # ResultObj(plt.step, px, py, "Months", "Proportion of Patients Alive",
+                                  # curve_label="{} Patients Model Prediction".format(pop_manager2.get_patient_size()), label="{} Patients Model Prediction".format
+                                  # (pop_manager2.get_patient_size()), alpha=0.7),
+                                  comment="stage_[{}]_Minimization".format(
+                                      stage)
+                                  )
 
 # result.params["mean_tumor_diameter"].vary = True
 # result.params["std_tumor_diameter"].vary = True

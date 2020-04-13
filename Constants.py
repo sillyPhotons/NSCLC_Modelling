@@ -36,7 +36,7 @@ RADIATION_ONLY_PATIENT_PERCENTAGE = {'2': 6,
 GR_RS_CORRELATION = 0.87
 
 # Number of months passed per time step
-RESOLUTION = 0.5
+RESOLUTION = 0.01
 
 # 1.48% survival reduction
 SURVIVAL_REDUCTION = 1.48

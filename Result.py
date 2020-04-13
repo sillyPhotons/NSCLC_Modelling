@@ -118,4 +118,4 @@ class ResultManager():
         plt.legend()
         # plt.show()
         plt.savefig(path + "/plot.pdf")
-        # plt.close()
+        plt.close()
