@@ -65,7 +65,16 @@ for stage in Constants.REFER_TUMOR_SIZE_DIST.keys():
                vary=False,
                min=Constants.REFER_TUMOR_SIZE_DIST[stage][2],
                max=Constants.REFER_TUMOR_SIZE_DIST[stage][3])
-
+    params.add("mean_rad_alpha", 
+               value = Constants.RAD_ALPHA[0],
+               vary = False,
+               min = 0,
+               max = np.inf)
+    params.add("std_rad_alpha", 
+               value=Constants.RAD_ALPHA[1],
+               vary=False,
+               min = 0,
+               max = np.inf)
     dat = np.loadtxt("./Data/stage{}Better.csv".format(stage), delimiter=',')
     # dat = np.loadtxt("./Data/stage1Better.csv", delimiter=',')
     x, data = rd.read_file(dat)

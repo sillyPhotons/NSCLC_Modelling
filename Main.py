@@ -92,6 +92,7 @@ for stage in Constants.REFER_TUMOR_SIZE_DIST.keys():
     x, data = rd.read_file(dat)
     # around the x_coordinates of the data, convert to days
     x = np.around(x) * 31
+    
 
     # Run minimization
     result = run(cf.cost_function, params,

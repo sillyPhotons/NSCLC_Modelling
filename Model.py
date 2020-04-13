@@ -8,41 +8,63 @@ import matplotlib.pyplot as plt
 from lmfit import minimize, Parameters
 from scipy.integrate import odeint
 from ReadData import read_file
-from Constants import DEATH_DIAMETER, RESOLUTION
+from Constants import DEATH_DIAMETER, RESOLUTION, RAD_DOSE
 import time
 
-def discrete_time_tumor_volume_GENG(previous_volume, growth_rate, carrying_capacity, h=RESOLUTION, noise=0):
+# def radiation_dose (dose_step = False):
+#     """
+#     Returns a value equal to the radiation dose if `dose_step` is true
+#     """
+
+#     if dose_step:
+#         return 2 
+#     else:
+#         return 0
+
+def discrete_time_tumor_volume_GENG(previous_volume, growth_rate, carrying_capacity, rad_alpha=0, rad_beta=0, dose_step = False, h=RESOLUTION, noise=0):
     """
     Discrete time formulation of tumor volume function as seen in: 
     https://www.nature.com/articles/s41598-018-30761-7
     """
+    dose = 0
+    if dose_step:
+        dose = RAD_DOSE
 
-    return previous_volume * np.exp(growth_rate * h * np.log(carrying_capacity/previous_volume))
+    return previous_volume * np.exp(growth_rate * h * np.log(carrying_capacity/previous_volume) - (rad_alpha*dose + rad_beta*dose**2))
 
 
-def rk4_tumor_volume(previous_volume, growth_rate, carrying_capacity, h=RESOLUTION, noise=0):
+def rk4_tumor_volume(previous_volume, growth_rate, carrying_capacity, rad_alpha=0, rad_beta=0, dose_step = False, h=RESOLUTION, noise=0):
     """
     """
+
+    dose = 0
+    if dose_step:
+        dose = RAD_DOSE
+
     k1 = previous_volume * growth_rate * \
-        np.log(carrying_capacity / previous_volume)
+        np.log(carrying_capacity / previous_volume) - (rad_alpha*dose + rad_beta*dose**2)* previous_volume
 
     k2 = (previous_volume + h * k1 / 2.) * growth_rate * \
-        np.log(carrying_capacity / (previous_volume + h * k1 / 2.))
+        np.log(carrying_capacity / (previous_volume + h * k1 / 2.)) - (rad_alpha*dose + rad_beta*dose**2) * (previous_volume + h * k1 / 2.)
 
     k3 = (previous_volume + h * k2 / 2.) * growth_rate * \
-        np.log(carrying_capacity / (previous_volume + h * k2 / 2.))
+        np.log(carrying_capacity / (previous_volume + h * k2 / 2.)) - (rad_alpha*dose + rad_beta*dose**2) * (previous_volume + h * k2 / 2.)
 
     k4 = (previous_volume + h * k3) * growth_rate * \
-        np.log(carrying_capacity / (previous_volume + h * k3))
+        np.log(carrying_capacity / (previous_volume + h * k3)) - (rad_alpha*dose + rad_beta*dose**2) * (previous_volume + h * k3)
 
-    return previous_volume + (1./6) * h * (k1 + 2*k2 + 2*k3 + k4)
+    return previous_volume + (1./6) * h * (k1 + 2*k2 + 2*k3 + k4) 
 
 
-def euler_tumor_volume(previous_volume, growth_rate, carrying_capacity, h=RESOLUTION, noise=0):
+def euler_tumor_volume(previous_volume, growth_rate, carrying_capacity, rad_alpha=0, rad_beta=0, dose_step = False, h=RESOLUTION, noise=0):
     """
     Discrete time formulation of tumor volume via linear approximation
     """
-    return previous_volume + h * previous_volume * (growth_rate * np.log(carrying_capacity / previous_volume) + noise)
+    dose = 0
+    if dose_step:
+        dose = RAD_DOSE
+
+    return previous_volume + h * previous_volume * growth_rate * np.log(carrying_capacity / previous_volume) - (rad_alpha*dose + rad_beta*dose**2)*previous_volume
 
 
 def gompertz_ode(N, t, growth_rate, carrying_capacity):
@@ -239,6 +261,7 @@ def predict_no_treatment(params, x, pop_manager):
     print("Predictive model evaluated in {} seconds.".format(runtime))
 
     return x, patients_alive
+
 
 def predict_KMSC_discrete(params, x, pop_manager, func_pointer):
     """

@@ -88,8 +88,8 @@ def cost_function(params, x, data, pop_manager, func_pointer):
 
     id_list = list()
     for num in range(patient_size):
-        obj_id = pp.sim_patient_death_time.remote(
-            initial_volume[num], growth_rates[num], carrying_capacity, death_volume, num_steps, func_pointer)
+        obj_id = pp.sim_patient_death_time.remote( num_steps, 
+            initial_volume[num], death_volume, func_pointer, growth_rates[num], carrying_capacity)
 
         id_list.append(obj_id)
 

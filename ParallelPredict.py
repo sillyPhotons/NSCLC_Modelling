@@ -14,36 +14,39 @@ from scipy.integrate import odeint
 from lmfit import minimize, Parameters
 
 from ReadData import read_file
-from Constants import DEATH_DIAMETER, RESOLUTION, SURVIVAL_REDUCTION
+from Constants import DEATH_DIAMETER, RESOLUTION, SURVIVAL_REDUCTION, TUMOR_DENSITY
 import Model as m
 
 
 @ray.remote
-def sim_patient_death_time(initial_volume, growth_rate, carrying_capacity, death_volume, num_steps, func_pointer):
+def sim_patient_death_time(num_steps, initial_volume, death_volume, func_pointer, *func_args, **func_kwargs):
     """
     This function is decorated with `@ray.remote`, which means that it is a funciton that may be called multiple times in parallel. Given the parameters, returns a single integer equal to number of time steps taken before the patient tumor volume exceeds `death_volume`
-
-    `initial_volume`: the initial tumor volume
-    `growth_rate`: floating point value
-    `carrying_capacity`: floating point value
-    `death_volume`: volume of tumor at which point the patient is considered dead
     `num_steps`: number of `RESOLUTION` steps to take
-    `func_pointer`: discrete time model of the mode taking `initial_volume`, `growth_rate`, `carrying_capacity` 
+    `initial_volume`: the initial tumor volume
+    `death_volume`: volume of tumor at which point the patient is considered dead
+    `func_pointer`: discrete time model of the model taking `*func_args` and `**func_kwargs` as parameters
     """
 
     cancer_volume = np.zeros(num_steps)
     cancer_volume[0] = initial_volume
 
+    recover_prob = np.random.rand(num_steps)
+
     death_time = None
     for i in range(1, num_steps):
 
         cancer_volume[i] = func_pointer(
-            cancer_volume[i - 1], growth_rate, carrying_capacity, h=RESOLUTION)
+            cancer_volume[i - 1], *func_args, **func_kwargs)
 
         if cancer_volume[i] > death_volume:
             cancer_volume[i] = death_volume
             death_time = i
             break
+
+        #probability that the tumor was controlled
+        if recover_prob[i] < np.exp(-cancer_volume[i] * TUMOR_DENSITY):
+            return None
 
     if (death_time is not None):
 
@@ -123,8 +126,8 @@ def predict_KMSC_discrete(params, x, pop_manager, func_pointer):
     id_list = list()
     for num in range(patient_size):
 
-        obj_id = sim_patient_death_time.remote(
-            initial_volume[num], growth_rates[num], carrying_capacity, death_volume, num_steps, func_pointer)
+        obj_id = sim_patient_death_time.remote(num_steps, 
+            initial_volume[num], death_volume, func_pointer, growth_rates[num], carrying_capacity)
 
         id_list.append(obj_id)
 
@@ -153,7 +156,7 @@ def predict_KMSC_discrete(params, x, pop_manager, func_pointer):
 
 
 @ray.remote
-def sim_patient_one_year(initial_volume, growth_rate, carrying_capacity, death_volume, num_steps, func_pointer):
+def sim_patient_one_year(num_steps, initial_volume, death_volume, func_pointer, *func_args, **func_kwargs):
     """
     This function is decorated with `@ray.remote`, which means that it is a funciton that may be called multiple times in parallel. Given the parameters, returns a single integer equal to the volume doubling time of the patient
 
@@ -170,7 +173,7 @@ def sim_patient_one_year(initial_volume, growth_rate, carrying_capacity, death_v
     for i in range(1, num_steps):
 
         cancer_volume[i] = func_pointer(
-            cancer_volume[i - 1], growth_rate, carrying_capacity, h=RESOLUTION)
+            cancer_volume[i - 1], *func_args, **func_kwargs)
 
     return m.volume_doubling_time(initial_volume, cancer_volume[-1])
 
@@ -248,8 +251,8 @@ def predict_VDT(params, x, pop_manager, func_pointer):
     id_list = list()
     for num in range(patient_size):
 
-        obj_id = sim_patient_one_year.remote(
-            initial_volume[num], growth_rates[num], carrying_capacity, death_volume, steps_to_one_year, func_pointer)
+        obj_id = sim_patient_one_year.remote( steps_to_one_year, 
+            initial_volume[num], death_volume, func_pointer, growth_rates[num], carrying_capacity)
 
         id_list.append(obj_id)
 

@@ -33,10 +33,23 @@ RADIATION_ONLY_PATIENT_PERCENTAGE = {'2': 6,
                                      '3A': 44,
                                      '3B': 50}
 
+"""
+The delay time, which is the time between diagnosis and the start of the
+treatment, was uniformly sampled from 2 - 3 weeks
+"""
+DIAGNOSIS_DELAY_RANGE = [14, 21]
+
+# Linear correlation coefficent between tumor growth rate and radiosensitivity
 GR_RS_CORRELATION = 0.87
 
 # Number of months passed per time step
-RESOLUTION = 0.01
+RESOLUTION = 1
 
 # 1.48% survival reduction
-SURVIVAL_REDUCTION = 1.48
+SURVIVAL_REDUCTION = 0
+
+# 2 gray dose fractions
+RAD_DOSE = 2
+
+# Radiosensitivity parameter. alpha/beta = 10 (Mehta 2001)
+RAD_ALPHA = [0.0398, 0.168]
