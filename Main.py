@@ -49,7 +49,7 @@ def run(cost_function, params, fcn_args):
 sampling_range = [0, 60]
 
 # The number of patients to generate for the minization of the cost function
-monte_carlo_patient_size = 10000
+monte_carlo_patient_size = 2000
 
 # Get an instance of a PropertyManager object, and initialize it patient size
 pop_manager = gp.PropertyManager(monte_carlo_patient_size)
@@ -112,9 +112,9 @@ for stage in Constants.REFER_TUMOR_SIZE_DIST.keys():
     # Passign ResultObj into the ResultManager object, where they are plotted and
     # saved
     res_manager.record_simulation(result,
-                                  ResultObj(plt.step, x, data, "Months",
+                                  ResultObj(plt.step, x, data, "Days",
                                             "Proportion of Patients Alive", curve_label="Stage {} Data".format(stage), label="Stage {} Data".format(stage), color="black", alpha=0.7),
-                                  ResultObj(plt.step, x, data + result.residual, "Months",
+                                  ResultObj(plt.step, x, data + result.residual, "Days",
                                             "Proportion of Patients Alive", curve_label="{} Patient Model".format(monte_carlo_patient_size), label="{} Patient Model".format(monte_carlo_patient_size), alpha=0.7),
                                   # ResultObj(plt.step, px, py, "Months", "Proportion of Patients Alive",
                                   # curve_label="{} Patients Model Prediction".format(pop_manager2.get_patient_size()), label="{} Patients Model Prediction".format

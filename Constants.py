@@ -29,9 +29,9 @@ NATURAL_HISTORY_PATIENT_SIZE = {'1': 1432,
 according tp ref # 27, the radiation therapy only patient group consisted of 6% 
 stage II, 44% stage 3A, and 50% stage 3B
 """
-RADIATION_ONLY_PATIENT_PERCENTAGE = {'2': 6,
-                                     '3A': 44,
-                                     '3B': 50}
+RADIATION_ONLY_PATIENT_PERCENTAGE = {'2': 6/100.,
+                                     '3A': 44/100.,
+                                     '3B': 50/100.}
 
 """
 The delay time, which is the time between diagnosis and the start of the

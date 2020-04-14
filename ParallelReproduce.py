@@ -47,8 +47,8 @@ monte_carlo_patient_size = 10000
 pop_manager = gp.PropertyManager(monte_carlo_patient_size)
 res_manager = ResultManager()
 
-for stage in Constants.REFER_TUMOR_SIZE_DIST.keys():
-    # for stage in ["1"]:
+# for stage in Constants.REFER_TUMOR_SIZE_DIST.keys():
+for stage in ["1"]:
 
     params = Parameters()
     params.add('mean_growth_rate', value=7*10**-5, min=0, vary=False)
@@ -75,8 +75,8 @@ for stage in Constants.REFER_TUMOR_SIZE_DIST.keys():
                vary=False,
                min = 0,
                max = np.inf)
-    dat = np.loadtxt("./Data/stage{}Better.csv".format(stage), delimiter=',')
-    # dat = np.loadtxt("./Data/stage1Better.csv", delimiter=',')
+    # dat = np.loadtxt("./Data/stage{}Better.csv".format(stage), delimiter=',')
+    dat = np.loadtxt("./Data/radiotherapy.csv", delimiter=',')
     x, data = rd.read_file(dat)
     x = np.around(x)
 
@@ -86,7 +86,7 @@ for stage in Constants.REFER_TUMOR_SIZE_DIST.keys():
     # plt.hist(vdts, 50, range = [0, 500],density=True, alpha=0.7, rwidth=0.85)
     # plt.show()
 
-    px, py = pp.predict_KMSC_discrete(params,
+    px, py = pp.reproduce_KMSC_discrete_with_radiation(params,
                                       np.arange(
                                           sampling_range[0], sampling_range[1]*31 + Constants.RESOLUTION, Constants.RESOLUTION),
                                       pop_manager,
@@ -99,5 +99,5 @@ for stage in Constants.REFER_TUMOR_SIZE_DIST.keys():
                   "Proportion of Patients Alive",
                   curve_label="Stage {} Model".format(stage),
                   label="Stage {} Model".format(stage), alpha=0.7),
-        comment="stage_[{}]_Reproduction".format(stage)
+        comment="Radiotherapy_Reproduction"
     )
