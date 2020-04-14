@@ -153,12 +153,12 @@ class PropertyManager ():
 
             pairs = np.random.multivariate_normal(
                 mean_array, covariance_matrix, retval)
-            
+
             for num in range(pairs.shape[0]):
 
                 if lb1 < pairs[num, 0] < ub1 and lb2 < pairs[num, 1] < ub2:
                     sampled_params.append(pairs[num, :])
-        
+
         return np.array(sampled_params)
 
     def get_patient_size(self):
@@ -246,26 +246,51 @@ def generate_csv(csv_path, params, pop_manager):
 
 if __name__ == "__main__":
 
-    from Constants import REFER_TUMOR_SIZE_DIST
+    from Constants import REFER_TUMOR_SIZE_DIST, TEST
     from scipy.stats import truncnorm
+    plt.rc("text", usetex=True)
+    plt.rcParams['font.family'] = 'serif'
 
-    pop_man = PropertyManager(10000)
+    pop_man = PropertyManager(1000)
     size = pop_man.get_patient_size()
 
-    mu = REFER_TUMOR_SIZE_DIST["3A"][0]
-    sigma = REFER_TUMOR_SIZE_DIST["3A"][1]
-    lb = REFER_TUMOR_SIZE_DIST["3A"][2]
-    up = REFER_TUMOR_SIZE_DIST["3A"][3]
+    for stage in REFER_TUMOR_SIZE_DIST.keys():
+        mu = REFER_TUMOR_SIZE_DIST[stage][0]
+        sigma = REFER_TUMOR_SIZE_DIST[stage][1]
+        lb = REFER_TUMOR_SIZE_DIST[stage][2]
+        up = REFER_TUMOR_SIZE_DIST[stage][3]
 
-    data = pop_man.sample_lognormal_param(mu, sigma, 10000, lb, up)
-    plt.hist(data, 500, density=True)
-    plt.show()
-    plt.close()
+        # data = pop_man.sample_lognormal_param(mu, sigma, 10000, lb, up)
+        # plt.hist(data, 500, density=True)
+        # plt.show()
+        # plt.close()
 
-    lowerbound = (np.log(lb) - mu) / sigma
-    upperbound = (np.log(up) - mu) / sigma
+        # lowerbound = (np.log(lb) - mu) / sigma
+        # upperbound = (np.log(up) - mu) / sigma
 
-    norm_rvs = truncnorm.rvs(lowerbound, upperbound, size=size)
-    initial_diameter = list(np.exp((norm_rvs * sigma) + mu))
-    plt.hist(initial_diameter, 500, density=True)
-    plt.show()
+        # norm_rvs = truncnorm.rvs(lowerbound, upperbound, size=size)
+        # initial_diameter = list(np.exp((norm_rvs * sigma) + mu))
+        # plt.hist(initial_diameter, int(np.ceil(up - lb)),
+        #          density=True, range=(0, up), alpha=0.7, rwidth=0.95)
+        # plt.title("Stage {} Volume Distribution".format(stage))
+        # plt.xlabel("Tumor Diameter [cm]")
+        # plt.ylabel("Frequency")
+        # plt.savefig("stage{}.pdf".format(stage))
+        # plt.close()
+
+        lowerbound = lb
+        upperbound = up
+
+        # initial_diameter = pop_man.sample_lognormal_param(mu,
+        #                                                   sigma,
+        #                                                   retval=size,
+        #                                                   lowerbound=lowerbound,
+        #                                                   upperbound=upperbound)
+
+        # plt.hist(initial_diameter, int(np.ceil(up - lb)),
+        #          density=True, range=(0, up), alpha=0.7, rwidth=0.95)
+        # plt.title("Stage {} Volume Distribution".format(stage))
+        # plt.xlabel("Tumor Diameter [cm]")
+        # plt.ylabel("Frequency")
+        # plt.savefig("stage{}.pdf".format(stage))
+        # plt.close()
