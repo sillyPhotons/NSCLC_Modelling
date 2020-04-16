@@ -9,7 +9,7 @@ import Model as m
 import ReadData as rd
 import GetProperties as gp
 from Result import ResultObj, ResultManager
-from CostFunction import cost_function_no_treatment
+from CostFunction import cost_function
 
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
@@ -37,17 +37,17 @@ res_manager = ResultManager()
 for stage in ["4"]:
 
     params = Parameters()
-    params.add('mean_growth_rate', value=7*10**-5, min=0, vary=False)
-    params.add('std_growth_rate', value=7.23*10**-3, min=0, vary=False)
-    # params.add('carrying_capacity', value=30, min=0, vary=False)
-    params.add('carrying_capacity',
+    params.add('rho_mu', value=7*10**-5, min=0, vary=False)
+    params.add('rho_sigma', value=7.23*10**-3, min=0, vary=False)
+    # params.add('K', value=30, min=0, vary=False)
+    params.add('K',
                value=pop_manager.get_volume_from_diameter(30), min=0, vary=False)
-    params.add('mean_tumor_diameter',
+    params.add('V_mu',
                value=Constants.REFER_TUMOR_SIZE_DIST[stage][0],
                vary=False,
                min=Constants.REFER_TUMOR_SIZE_DIST[stage][2],
                max=Constants.REFER_TUMOR_SIZE_DIST[stage][3])
-    params.add('std_tumor_diameter',
+    params.add('V_sigma',
                value=Constants.REFER_TUMOR_SIZE_DIST[stage][1],
                vary=False,
                min=Constants.REFER_TUMOR_SIZE_DIST[stage][2],

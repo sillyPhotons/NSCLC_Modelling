@@ -71,18 +71,18 @@ for stage in Constants.REFER_TUMOR_SIZE_DIST.keys():
     params = Parameters()
     # Added so that it shows up in the report file
     params.add("Resolution", value=Constants.RESOLUTION, vary=False)
-    params.add('mean_growth_rate', value=7.00*10**-5, min=0, vary=False)
-    params.add('std_growth_rate', value=7.23*10**-3, min=0, vary=False)
-    params.add('carrying_capacity',
+    params.add('rho_mu', value=7.00*10**-5, min=0, vary=False)
+    params.add('rho_sigma', value=7.23*10**-3, min=0, vary=False)
+    params.add('K',
                value=pop_manager.get_volume_from_diameter(30),
                min=0,
                vary=False)
-    params.add('mean_tumor_diameter',
+    params.add('V_mu',
                value=Constants.REFER_TUMOR_SIZE_DIST[stage][0],
                vary=False,
                min=Constants.REFER_TUMOR_SIZE_DIST[stage][2],
                max=Constants.REFER_TUMOR_SIZE_DIST[stage][3])
-    params.add('std_tumor_diameter',
+    params.add('V_sigma',
                value=Constants.REFER_TUMOR_SIZE_DIST[stage][1],
                vary=True,
                min=Constants.REFER_TUMOR_SIZE_DIST[stage][2],
@@ -123,11 +123,11 @@ for stage in Constants.REFER_TUMOR_SIZE_DIST.keys():
                                       stage)
                                   )
 
-# result.params["mean_tumor_diameter"].vary = True
-# result.params["std_tumor_diameter"].vary = True
-# result.params["mean_growth_rate"].vary = False
-# result.params["std_growth_rate"].vary = False
-# result.params["carrying_capacity"].vary = False
+# result.params["V_mu"].vary = True
+# result.params["V_sigma"].vary = True
+# result.params["rho_mu"].vary = False
+# result.params["rho_sigma"].vary = False
+# result.params["K"].vary = False
 
 # pop_man = gp.PropertyManager(monte_carlo_patient_size)
 # result2 = run(cost_function_no_treatment, result.params,

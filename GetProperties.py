@@ -1,9 +1,13 @@
-import matplotlib.pyplot as plt
-import numpy as np
-from scipy.optimize import curve_fit
-import matplotlib as mpl
-from Constants import TUMOR_DENSITY
 import csv
+import logging
+import numpy as np
+import matplotlib as mpl
+from lmfit import Parameters
+import matplotlib.pyplot as plt
+from scipy.stats import truncnorm
+from scipy.optimize import curve_fit
+
+import Constants as c
 
 
 class PropertyManager ():
@@ -176,19 +180,19 @@ class PropertyManager ():
     def get_tumor_cell_number_from_diameter(self, diameter_array):
 
         volume_array = self.get_volume_from_diameter(diameter_array)
-        cell_number_array = volume_array * TUMOR_DENSITY
+        cell_number_array = volume_array * c.TUMOR_DENSITY
 
         return cell_number_array
 
     def get_tumor_cell_number_from_volume(self, volume_array):
 
-        cell_number_array = volume_array * TUMOR_DENSITY
+        cell_number_array = volume_array * c.TUMOR_DENSITY
 
         return cell_number_array
 
     def get_volume_from_tumor_cell_number(self, cell_number_array):
 
-        volume_array = cell_number_array / TUMOR_DENSITY
+        volume_array = cell_number_array / c.TUMOR_DENSITY
 
         return volume_array
 
@@ -200,7 +204,123 @@ class PropertyManager ():
 
         return diameter_array
 
+    def get_param_object_for_no_treatment(self, stage="1"):
 
+        params = Parameters()
+
+        mu = np.log(c.TABLE2[stage][1])
+        sigma = np.sqrt(2*(np.abs(np.log(c.TABLE2[stage][0]) - mu)))
+
+        params.add("rho_mu", value=7*10**-5, min=0, vary=False)
+        params.add("rho_sigma", value=7.23*10**-3, min=0, vary=False)
+        params.add('K', value=self.get_volume_from_diameter(30),
+                   min=0, vary=False)
+        params.add('V_mu',
+                   value=mu,
+                   vary=False,
+                   min=c.REFER_TUMOR_SIZE_DIST[stage][2],
+                   max=c.REFER_TUMOR_SIZE_DIST[stage][3])
+        params.add('V_sigma',
+                   value=sigma,
+                   vary=False,
+                   min=c.REFER_TUMOR_SIZE_DIST[stage][2],
+                   max=c.REFER_TUMOR_SIZE_DIST[stage][3])
+
+        return params
+
+    def get_param_object_for_radiation(self):
+
+        params = Parameters()
+
+        params.add("rho_mu", value=7*10**-5, min=0, vary=False)
+        params.add("rho_sigma", value=7.23*10**-3, min=0, vary=False)
+        params.add('K', value=self.get_volume_from_diameter(30),
+                   min=0, vary=False)
+        params.add("alpha_mu",
+                   value=c.RAD_ALPHA[0],
+                   vary=False,
+                   min=0,
+                   max=np.inf)
+        params.add("alpha_sigma",
+                   value=c.RAD_ALPHA[1],
+                   vary=False,
+                   min=0,
+                   max=np.inf)
+
+        return params
+
+    def get_initial_diameters(self, stage_1=1, stage_2=0, stage_3A=0, stage_3B=0, stage_4=0):
+
+        try:
+            assert(stage_1 + stage_2 + stage_3A + stage_3B + stage_4 == 1)
+        except Exception:
+            logging.error("Sum of population proportions do not equal 1!")
+
+        stage_1_num = int(np.ceil(self.patient_size * stage_1))
+        stage_2_num = int(np.ceil(self.patient_size * stage_2))
+        stage_3A_num = int(np.ceil(self.patient_size * stage_3A))
+        stage_3B_num = int(np.ceil(self.patient_size * stage_3B))
+        stage_4_num = int(np.ceil(self.patient_size * stage_4))
+        sum_num = stage_1_num + stage_2_num + stage_3A_num + stage_3B_num + stage_4_num
+
+        if (sum_num != self.patient_size):
+            logging.warning(
+                "Requested {}, {} initial tumor diameter will be returned instead".format(self.patient_size, sum_num))
+
+        stage_keys = c.TABLE2.keys()
+        stage_num_dict = dict(zip(
+            stage_keys, [stage_1_num, stage_2_num, stage_3A_num, stage_3B_num, stage_4_num]))
+
+        ret_array = []
+        for stage in stage_keys:
+            if (stage_num_dict[stage] != 0):
+                V_mu = np.log(c.TABLE2[stage][1])
+                V_sigma = np.sqrt(2*(np.abs(np.log(c.TABLE2[stage][0]) - V_mu)))
+                lb = c.REFER_TUMOR_SIZE_DIST[stage][2]
+                ub = c.REFER_TUMOR_SIZE_DIST[stage][3]
+
+                lowerbound = (np.log(lb) - V_mu) / V_sigma
+                upperbound = (np.log(ub) - V_mu) / V_sigma
+
+                norm_rvs = truncnorm.rvs(
+                    lowerbound, upperbound, size=stage_num_dict[stage])
+                initial_diameter = list(np.exp((norm_rvs * V_sigma) + V_mu))
+                ret_array = ret_array + initial_diameter
+
+        assert(len(ret_array) == sum_num)
+
+        return ret_array
+
+    def get_radiation_days(self, num_steps):
+        """
+        """
+        treatment_delay = np.random.uniform(low=c.DIAGNOSIS_DELAY_RANGE[0],
+                                        high=c.DIAGNOSIS_DELAY_RANGE[1],
+                                        size=self.patient_size)
+        
+        treatment_days = np.zeros([self.patient_size, num_steps])
+
+        for i in range(self.patient_size):
+            one_day = int(1/c.RESOLUTION)
+            steps_delayed = int(treatment_delay[i]/c.RESOLUTION)
+
+            # 30 fractions of 2 Gy dose for a total of 60 Gy
+            total_dose = 0
+            last_step = steps_delayed
+
+            for num in range(6):
+                five_days = last_step + 5*one_day
+                treatment_days[i][last_step:five_days] = 1
+                last_step = five_days + 2*one_day
+
+            for num in range(num_steps):
+                if (treatment_days[i][num] == 1):
+                    total_dose += 2/one_day
+
+            print(total_dose)
+
+        return treatment_days
+                    
 def generate_csv(csv_path, params, pop_manager):
     """
     Given the location of a csv file, a patient population is generated via 
@@ -211,35 +331,35 @@ def generate_csv(csv_path, params, pop_manager):
     csv_path: string specifying the path to save the csv file generate, 
               including the name of the csv file
     params: Parameters object containing the following Parameter objects:
-        mean_growth_rate = p['mean_growth_rate']
-        std_growth_rate = p['std_growth_rate']
-        carrying_capacity = p['carrying_capacity']
-        mean_tumor_diameter = p['mean_tumor_diameter']
-        std_tumor_diameter = p['std_tumor_diameter']
+        rho_mu = p['rho_mu']
+        rho_sigma = p['rho_sigma']
+        K = p['K']
+        V_mu = p['V_mu']
+        V_sigma = p['V_sigma']
     pop_manager: PropertyManager object
     """
 
     p = params.valuesdict()
-    mean_growth_rate = p['mean_growth_rate']
-    std_growth_rate = p['std_growth_rate']
-    carrying_capacity = p['carrying_capacity']
-    mean_tumor_diameter = p['mean_tumor_diameter']
-    std_tumor_diameter = p['std_tumor_diameter']
+    rho_mu = p['rho_mu']
+    rho_sigma = p['rho_sigma']
+    K = p['K']
+    V_mu = p['V_mu']
+    V_sigma = p['V_sigma']
 
     with open(csv_path, mode='w') as f:
 
         writer = csv.writer(f, delimiter=',')
 
         tumor_diameter = pop_manager.sample_lognormal_param(
-            mean=mean_tumor_diameter, std=std_tumor_diameter, retval=pop_manager.patient_size, lowerbound=0.3, upperbound=5)
+            mean=V_mu, std=V_sigma, retval=pop_manager.patient_size, lowerbound=0.3, upperbound=5)
 
         growth_rate = pop_manager.sample_normal_param(
-            mean=mean_growth_rate, std=std_growth_rate, retval=pop_manager.patient_size, lowerbound=0, upperbound=None)
+            mean=rho_mu, std=rho_sigma, retval=pop_manager.patient_size, lowerbound=0, upperbound=None)
 
         for num in range(pop_manager.patient_size):
 
             writer.writerow(
-                [tumor_diameter[num], growth_rate[num], carrying_capacity])
+                [tumor_diameter[num], growth_rate[num], K])
 
     return csv_path
 
@@ -251,26 +371,29 @@ if __name__ == "__main__":
     plt.rc("text", usetex=True)
     plt.rcParams['font.family'] = 'serif'
 
-    pop_man = PropertyManager(10000)
-    size = pop_man.get_patient_size()
+    pop_man = PropertyManager(1)
 
-    for stage in REFER_TUMOR_SIZE_DIST.keys():
+    print(pop_man.get_initial_diameters(0.5, 0.5, 0, 0, 0))
 
-        mu = np.log(TABLE2[stage][1])
-        sigma = np.sqrt(2*(np.abs(np.log(TABLE2[stage][0]) - mu)))
-        lb = REFER_TUMOR_SIZE_DIST[stage][2]
-        ub = REFER_TUMOR_SIZE_DIST[stage][3]
+    # size = pop_man.get_patient_size()
 
-        lowerbound = (np.log(lb) - mu) / sigma
-        upperbound = (np.log(ub) - mu) / sigma
+    # for stage in REFER_TUMOR_SIZE_DIST.keys():
 
-        norm_rvs = truncnorm.rvs(lowerbound, upperbound, size=size)
-        initial_diameter = list(np.exp((norm_rvs * sigma) + mu))
-        plt.hist(initial_diameter, int(np.ceil(ub - lb)),
-                 density=True, range=(0, ub), alpha=0.7, rwidth=0.95, label = "Mean = {}\nMedian = {}".format(TABLE2[stage][0], TABLE2[stage][1]))
-        plt.title("Stage {} Volume Distribution".format(stage))
-        plt.xlabel("Tumor Diameter [cm]")
-        plt.ylabel("Frequency")
-        plt.legend()
-        plt.savefig("stage{}.pdf".format(stage))
-        plt.close()
+    #     mu = np.log(TABLE2[stage][1])
+    #     sigma = np.sqrt(2*(np.abs(np.log(TABLE2[stage][0]) - mu)))
+    #     lb = REFER_TUMOR_SIZE_DIST[stage][2]
+    #     ub = REFER_TUMOR_SIZE_DIST[stage][3]
+
+    #     lowerbound = (np.log(lb) - mu) / sigma
+    #     upperbound = (np.log(ub) - mu) / sigma
+
+    #     norm_rvs = truncnorm.rvs(lowerbound, upperbound, size=size)
+    #     initial_diameter = list(np.exp((norm_rvs * sigma) + mu))
+    #     plt.hist(initial_diameter, int(np.ceil(ub - lb)),
+    #              density=True, range=(0, ub), alpha=0.7, rwidth=0.95, label="Mean = {}\nMedian = {}".format(TABLE2[stage][0], TABLE2[stage][1]))
+    #     plt.title("Stage {} Volume Distribution".format(stage))
+    #     plt.xlabel("Tumor Diameter [cm]")
+    #     plt.ylabel("Frequency")
+    #     plt.legend()
+    #     plt.savefig("stage{}.pdf".format(stage))
+    #     plt.close()

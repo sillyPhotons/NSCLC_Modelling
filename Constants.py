@@ -43,7 +43,7 @@ DIAGNOSIS_DELAY_RANGE = [14, 21]
 GR_RS_CORRELATION = 0.87
 
 # Number of months passed per time step
-RESOLUTION = 1
+RESOLUTION = 0.5
 
 # 1.48% survival reduction
 SURVIVAL_REDUCTION = 0

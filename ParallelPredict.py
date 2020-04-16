@@ -106,15 +106,15 @@ def predict_KMSC_discrete(params, x, pop_manager, func_pointer):
     `param`: `Parameters` object 
     `x`: numpy time array to find the KMSC curve on
     `pop_manager`: `PropertyManager` object
-    `func_pointer`: a function object. In python, functions are first class objects. Discrete time model of the mode taking `initial_volume`, `growth_rate`, `carrying_capacity` 
+    `func_pointer`: a function object. In python, functions are first class objects. Discrete time model of the mode taking `initial_volume`, `growth_rate`, `K` 
 
     Requires:
         `Parameters` object contains Parameter objects with the keys:
-            `mean_growth_rate`
-            `std_growth_rate`
-            `carrying_capacity`
-            `mean_tumor_diameter`
-            `std_tumor_diameter`
+            `rho_mu`
+            `rho_sigma`
+            `K`
+            `V_mu`
+            `V_sigma`
     """
 
     start = time.time()
@@ -122,48 +122,33 @@ def predict_KMSC_discrete(params, x, pop_manager, func_pointer):
     from scipy.stats import truncnorm
 
     p = params.valuesdict()
-    mean_growth_rate = p['mean_growth_rate']
-    std_growth_rate = p['std_growth_rate']
-    carrying_capacity = p['carrying_capacity']
-    mean_tumor_diameter = p['mean_tumor_diameter']
-    std_tumor_diameter = p['std_tumor_diameter']
+    rho_mu = p['rho_mu']
+    rho_sigma = p['rho_sigma']
+    K = p['K']
+    V_mu = p['V_mu']
+    V_sigma = p['V_sigma']
 
     patient_size = pop_manager.get_patient_size()
     num_steps = x.size
     patients_alive = [patient_size] * num_steps
 
     ######################################################################
-    lowerbound = (np.log(params['mean_tumor_diameter'].min) -
-                  mean_tumor_diameter) / std_tumor_diameter
-    upperbound = (np.log(params['mean_tumor_diameter'].max) -
-                  mean_tumor_diameter) / std_tumor_diameter
+    lowerbound = (np.log(params['V_mu'].min) -
+                  V_mu) / V_sigma
+    upperbound = (np.log(params['V_mu'].max) -
+                  V_mu) / V_sigma
 
     norm_rvs = truncnorm.rvs(lowerbound, upperbound, size=patient_size)
 
     initial_diameter = list(np.exp(
-        (norm_rvs * std_tumor_diameter) + mean_tumor_diameter))
+        (norm_rvs * V_sigma) + V_mu))
     ######################################################################
-
-    # ######################################################################
-    # lowerbound = params['mean_tumor_diameter'].min
-    # upperbound = params['mean_tumor_diameter'].max
-
-    # lognormal_sigma = np.sqrt(np.log((std_tumor_diameter**2)/(mean_tumor_diameter**2) + 1))
-
-    # lognormal_mean = np.log(mean_tumor_diameter) - (lognormal_sigma**2)/2.
-
-    # initial_diameter = pop_manager.sample_lognormal_param(lognormal_mean,
-    #                                                       lognormal_sigma,
-    #                                                       retval=patient_size,
-    #                                                       lowerbound=lowerbound,
-    #                                                       upperbound=upperbound)
-    # ######################################################################
 
     initial_volume = pop_manager.get_volume_from_diameter(
         np.array(initial_diameter))
 
     growth_rates = pop_manager.sample_normal_param(
-        mean=mean_growth_rate, std=std_growth_rate, retval=patient_size, lowerbound=0, upperbound=None)
+        mean=rho_mu, std=rho_sigma, retval=patient_size, lowerbound=0, upperbound=None)
 
     death_volume = pop_manager.get_volume_from_diameter(c.DEATH_DIAMETER)
 
@@ -171,7 +156,7 @@ def predict_KMSC_discrete(params, x, pop_manager, func_pointer):
     for num in range(patient_size):
 
         obj_id = sim_patient_death_time.remote(num_steps,
-                                               initial_volume[num], death_volume, func_pointer, growth_rates[num], carrying_capacity)
+                                               initial_volume[num], death_volume, func_pointer, growth_rates[num], K)
 
         id_list.append(obj_id)
 
@@ -206,10 +191,10 @@ def sim_patient_one_year(num_steps, initial_volume, death_volume, func_pointer, 
 
     `initial_volume`: the initial tumor volume
     `growth_rate`: floating point value
-    `carrying_capacity`: floating point value
+    `K`: floating point value
     `death_volume`: volume of tumor at which point the patient is considered dead
     `num_steps`: number of `RESOLUTION` steps to take until 365 days
-    `func_pointer`: function object, discrete time model of the mode taking `initial_volume`, `growth_rate`, `carrying_capacity` 
+    `func_pointer`: function object, discrete time model of the mode taking `initial_volume`, `growth_rate`, `K` 
     """
     cancer_volume = np.zeros(num_steps)
     cancer_volume[0] = initial_volume
@@ -229,7 +214,7 @@ def predict_VDT(params, x, pop_manager, func_pointer):
     `param`: `Parameters` object 
     `x`: time array to find the KMSC curve on
     `pop_manager`: `PropertyManager` object
-    `func_pointer`: a function object. In python, functions are first class objects. Discrete time model of the mode taking `initial_volume`, `growth_rate`, `carrying_capacity` 
+    `func_pointer`: a function object. In python, functions are first class objects. Discrete time model of the mode taking `initial_volume`, `growth_rate`, `K` 
     """
 
     start = time.time()
@@ -237,57 +222,31 @@ def predict_VDT(params, x, pop_manager, func_pointer):
     from scipy.stats import truncnorm
 
     p = params.valuesdict()
-    mean_growth_rate = p['mean_growth_rate']
-    std_growth_rate = p['std_growth_rate']
-    carrying_capacity = p['carrying_capacity']
-    mean_tumor_diameter = p['mean_tumor_diameter']
-    std_tumor_diameter = p['std_tumor_diameter']
+    rho_mu = p['rho_mu']
+    rho_sigma = p['rho_sigma']
+    K = p['K']
+    V_mu = p['V_mu']
+    V_sigma = p['V_sigma']
 
     patient_size = pop_manager.get_patient_size()
 
     ######################################################################
-    lowerbound = (np.log(params['mean_tumor_diameter'].min) -
-                  mean_tumor_diameter) / std_tumor_diameter
-    upperbound = (np.log(params['mean_tumor_diameter'].max) -
-                  mean_tumor_diameter) / std_tumor_diameter
+    lowerbound = (np.log(params['V_mu'].min) -
+                  V_mu) / V_sigma
+    upperbound = (np.log(params['V_mu'].max) -
+                  V_mu) / V_sigma
 
     norm_rvs = truncnorm.rvs(lowerbound, upperbound, size=patient_size)
 
     initial_diameter = list(np.exp(
-        (norm_rvs * std_tumor_diameter) + mean_tumor_diameter))
+        (norm_rvs * V_sigma) + V_mu))
     ######################################################################
-
-    # ######################################################################
-    # lowerbound = params['mean_tumor_diameter'].min
-    # upperbound = params['mean_tumor_diameter'].max
-
-    # initial_diameter = pop_manager.sample_lognormal_param(mean_tumor_diameter,
-    #                                                       std_tumor_diameter,
-    #                                                       retval=patient_size,
-    #                                                       lowerbound=lowerbound,
-    #                                                       upperbound=upperbound)
-    # ######################################################################
-
-    # ######################################################################
-    # lowerbound = params['mean_tumor_diameter'].min
-    # upperbound = params['mean_tumor_diameter'].max
-
-    # lognormal_sigma = np.sqrt(np.log((std_tumor_diameter**2)/(mean_tumor_diameter**2) + 1))
-
-    # lognormal_mean = np.log(mean_tumor_diameter) - (lognormal_sigma**2)/2.
-
-    # initial_diameter = pop_manager.sample_lognormal_param(lognormal_mean,
-    #                                                       lognormal_sigma,
-    #                                                       retval=patient_size,
-    #                                                       lowerbound=lowerbound,
-    #                                                       upperbound=upperbound)
-    # ######################################################################
 
     initial_volume = pop_manager.get_volume_from_diameter(
         np.array(initial_diameter))
 
     growth_rates = pop_manager.sample_normal_param(
-        mean=mean_growth_rate, std=std_growth_rate, retval=patient_size, lowerbound=0, upperbound=None)
+        mean=rho_mu, std=rho_sigma, retval=patient_size, lowerbound=0, upperbound=None)
 
     death_volume = pop_manager.get_volume_from_diameter(c.DEATH_DIAMETER)
     steps_to_one_year = int(365./c.RESOLUTION)
@@ -296,7 +255,7 @@ def predict_VDT(params, x, pop_manager, func_pointer):
     for num in range(patient_size):
 
         obj_id = sim_patient_one_year.remote(steps_to_one_year,
-                                             initial_volume[num], death_volume, func_pointer, growth_rates[num], carrying_capacity)
+                                             initial_volume[num], death_volume, func_pointer, growth_rates[num], K)
 
         id_list.append(obj_id)
 
@@ -333,19 +292,19 @@ def reproduce_KMSC_discrete_with_radiation(params, x, pop_manager, func_pointer)
 
     diameters = []
     for stage in ["2", "3A", "3B"]:
-        mean_tumor_diameter = c.REFER_TUMOR_SIZE_DIST[stage][0]
-        std_tumor_diameter = c.REFER_TUMOR_SIZE_DIST[stage][1]
+        V_mu = c.REFER_TUMOR_SIZE_DIST[stage][0]
+        V_sigma = c.REFER_TUMOR_SIZE_DIST[stage][1]
 
         ######################################################################
         lowerbound = (np.log(c.REFER_TUMOR_SIZE_DIST[stage][2]) -
-                      mean_tumor_diameter) / std_tumor_diameter
+                      V_mu) / V_sigma
         upperbound = (np.log(c.REFER_TUMOR_SIZE_DIST[stage][3]) -
-                      mean_tumor_diameter) / std_tumor_diameter
+                      V_mu) / V_sigma
 
         norm_rvs = truncnorm.rvs(lowerbound, upperbound, size=stage_pop[stage])
 
         initial_diameter = list(np.exp(
-            (norm_rvs * std_tumor_diameter) + mean_tumor_diameter))
+            (norm_rvs * V_sigma) + V_mu))
         ######################################################################
         diameters.append(initial_diameter)
 
