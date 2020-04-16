@@ -251,7 +251,7 @@ if __name__ == "__main__":
     plt.rc("text", usetex=True)
     plt.rcParams['font.family'] = 'serif'
 
-    pop_man = PropertyManager(100000)
+    pop_man = PropertyManager(10000)
     size = pop_man.get_patient_size()
 
     for stage in REFER_TUMOR_SIZE_DIST.keys():
@@ -261,31 +261,16 @@ if __name__ == "__main__":
         lb = REFER_TUMOR_SIZE_DIST[stage][2]
         ub = REFER_TUMOR_SIZE_DIST[stage][3]
 
-        print(mu, sigma)
+        lowerbound = (np.log(lb) - mu) / sigma
+        upperbound = (np.log(ub) - mu) / sigma
 
-        # lowerbound = (np.log(lb) - mu) / sigma
-        # upperbound = (np.log(up) - mu) / sigma
-
-        # norm_rvs = truncnorm.rvs(lowerbound, upperbound, size=size)
-        # initial_diameter = list(np.exp((norm_rvs * sigma) + mu))
-        # plt.hist(initial_diameter, int(np.ceil(ub - lb)),
-        #          density=True, range=(0, up), alpha=0.7, rwidth=0.95)
-        # plt.title("Stage {} Volume Distribution".format(stage))
-        # plt.xlabel("Tumor Diameter [cm]")
-        # plt.ylabel("Frequency")
-        # plt.savefig("stage{}.pdf".format(stage))
-        # plt.close()
-
-        initial_diameter = pop_man.sample_lognormal_param(mu,
-                                                          sigma,
-                                                          retval=size,
-                                                          lowerbound=lb,
-                                                          upperbound=ub)
-
+        norm_rvs = truncnorm.rvs(lowerbound, upperbound, size=size)
+        initial_diameter = list(np.exp((norm_rvs * sigma) + mu))
         plt.hist(initial_diameter, int(np.ceil(ub - lb)),
-                 density=True, range=(0, ub), alpha=0.7, rwidth=0.95)
+                 density=True, range=(0, ub), alpha=0.7, rwidth=0.95, label = "Mean = {}\nMedian = {}".format(TABLE2[stage][0], TABLE2[stage][1]))
         plt.title("Stage {} Volume Distribution".format(stage))
         plt.xlabel("Tumor Diameter [cm]")
         plt.ylabel("Frequency")
+        plt.legend()
         plt.savefig("stage{}.pdf".format(stage))
         plt.close()
