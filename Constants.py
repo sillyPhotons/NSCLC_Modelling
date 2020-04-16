@@ -54,9 +54,9 @@ RAD_DOSE = 2
 # Radiosensitivity parameter. alpha/beta = 10 (Mehta 2001)
 RAD_ALPHA = [0.0398, 0.168]
 
-
-TEST = {'1': [1.72, 4.70, 0.3, 5.0],
-        '2': [1.96, 10.88, 0.3, 13.0],
-        '3A': [1.91, 0.62, 0.3, 13.0],
-        '3B': [2.76, 0.66, 0.3, 13.0],
-        '4': [3.86, 0.89, 0.3, 13.0]}
+# Values given in table 2 of the mean and median of the fitted volume distribution. To convert to input parameters for lognormal distribution sampling, mu = ln(mean), sigma = sqrt(2(ln(mean) - mu))
+TABLE2 = {'1': [1.66, 1.23],
+          '2': [4.49, 3.53],
+          '3A': [5.63, 5.06],
+          '3B': [8.54, 8.74],
+          '4': [9.26, 9.68]}

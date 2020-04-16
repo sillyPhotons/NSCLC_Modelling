@@ -19,36 +19,16 @@ from Result import ResultObj, ResultManager
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 ray.init()
 
-def run(cost_function, params, fcn_args):
-    """
-    returns a `MinizerResult` object that represents the results of an 
-    optimization algorithm
-
-    `cost_function`: a callable (cost function) taking a `Parameters` object, 
-        x numpy array, y numpy array, and other parameters
-    `params`: `Parameters` object to be passed into the `cost_function`
-    `fcn_args`: arugments for the `cost_function`
-    """
-
-    start = time.time()
-    minner = Minimizer(cost_function, params, fcn_args)
-    result = minner.minimize(method="powell")
-    report_fit(result.params)
-    end = time.time()
-    runtime = end - start
-    logging.critical(
-        "A Total of {} seconds to complete \U0001F606".format(runtime))
-
-    return result
-
-
 sampling_range = [0, 60]
 monte_carlo_patient_size = 10000
 pop_manager = gp.PropertyManager(monte_carlo_patient_size)
 res_manager = ResultManager()
 
-# for stage in Constants.REFER_TUMOR_SIZE_DIST.keys():
-for stage in ["1"]:
+for stage in Constants.REFER_TUMOR_SIZE_DIST.keys():
+# for stage in ["4"]:
+
+    mu = np.log(Constants.TABLE2[stage][1])
+    sigma = np.sqrt(2*(np.abs(np.log(Constants.TABLE2[stage][0]) - mu)))
 
     params = Parameters()
     params.add('mean_growth_rate', value=7*10**-5, min=0, vary=False)
@@ -56,12 +36,12 @@ for stage in ["1"]:
     params.add('carrying_capacity',
                value=pop_manager.get_volume_from_diameter(30), min=0, vary=False)
     params.add('mean_tumor_diameter',
-               value=Constants.REFER_TUMOR_SIZE_DIST[stage][0],
+               value=mu,
                vary=False,
                min=Constants.REFER_TUMOR_SIZE_DIST[stage][2],
                max=Constants.REFER_TUMOR_SIZE_DIST[stage][3])
     params.add('std_tumor_diameter',
-               value=Constants.REFER_TUMOR_SIZE_DIST[stage][1],
+               value=sigma,
                vary=False,
                min=Constants.REFER_TUMOR_SIZE_DIST[stage][2],
                max=Constants.REFER_TUMOR_SIZE_DIST[stage][3])
@@ -75,8 +55,9 @@ for stage in ["1"]:
                vary=False,
                min = 0,
                max = np.inf)
-    # dat = np.loadtxt("./Data/stage{}Better.csv".format(stage), delimiter=',')
-    dat = np.loadtxt("./Data/radiotherapy.csv", delimiter=',')
+
+    dat = np.loadtxt("./Data/stage{}Better.csv".format(stage), delimiter=',')
+    # dat = np.loadtxt("./Data/radiotherapy.csv", delimiter=',')
     x, data = rd.read_file(dat)
     x = np.around(x)
 
@@ -86,7 +67,7 @@ for stage in ["1"]:
     # plt.hist(vdts, 50, range = [0, 500],density=True, alpha=0.7, rwidth=0.85)
     # plt.show()
 
-    px, py = pp.reproduce_KMSC_discrete_with_radiation(params,
+    px, py = pp.predict_KMSC_discrete(params,
                                       np.arange(
                                           sampling_range[0], sampling_range[1]*31 + Constants.RESOLUTION, Constants.RESOLUTION),
                                       pop_manager,
@@ -99,5 +80,5 @@ for stage in ["1"]:
                   "Proportion of Patients Alive",
                   curve_label="Stage {} Model".format(stage),
                   label="Stage {} Model".format(stage), alpha=0.7),
-        comment="Radiotherapy_Reproduction"
+        comment="Stage_[{}]".format(stage)
     )

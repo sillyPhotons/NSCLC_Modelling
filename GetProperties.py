@@ -246,31 +246,29 @@ def generate_csv(csv_path, params, pop_manager):
 
 if __name__ == "__main__":
 
-    from Constants import REFER_TUMOR_SIZE_DIST, TEST
+    from Constants import REFER_TUMOR_SIZE_DIST, TABLE2
     from scipy.stats import truncnorm
     plt.rc("text", usetex=True)
     plt.rcParams['font.family'] = 'serif'
 
-    pop_man = PropertyManager(1000)
+    pop_man = PropertyManager(100000)
     size = pop_man.get_patient_size()
 
     for stage in REFER_TUMOR_SIZE_DIST.keys():
-        mu = REFER_TUMOR_SIZE_DIST[stage][0]
-        sigma = REFER_TUMOR_SIZE_DIST[stage][1]
-        lb = REFER_TUMOR_SIZE_DIST[stage][2]
-        up = REFER_TUMOR_SIZE_DIST[stage][3]
 
-        # data = pop_man.sample_lognormal_param(mu, sigma, 10000, lb, up)
-        # plt.hist(data, 500, density=True)
-        # plt.show()
-        # plt.close()
+        mu = np.log(TABLE2[stage][1])
+        sigma = np.sqrt(2*(np.abs(np.log(TABLE2[stage][0]) - mu)))
+        lb = REFER_TUMOR_SIZE_DIST[stage][2]
+        ub = REFER_TUMOR_SIZE_DIST[stage][3]
+
+        print(mu, sigma)
 
         # lowerbound = (np.log(lb) - mu) / sigma
         # upperbound = (np.log(up) - mu) / sigma
 
         # norm_rvs = truncnorm.rvs(lowerbound, upperbound, size=size)
         # initial_diameter = list(np.exp((norm_rvs * sigma) + mu))
-        # plt.hist(initial_diameter, int(np.ceil(up - lb)),
+        # plt.hist(initial_diameter, int(np.ceil(ub - lb)),
         #          density=True, range=(0, up), alpha=0.7, rwidth=0.95)
         # plt.title("Stage {} Volume Distribution".format(stage))
         # plt.xlabel("Tumor Diameter [cm]")
@@ -278,19 +276,16 @@ if __name__ == "__main__":
         # plt.savefig("stage{}.pdf".format(stage))
         # plt.close()
 
-        lowerbound = lb
-        upperbound = up
+        initial_diameter = pop_man.sample_lognormal_param(mu,
+                                                          sigma,
+                                                          retval=size,
+                                                          lowerbound=lb,
+                                                          upperbound=ub)
 
-        # initial_diameter = pop_man.sample_lognormal_param(mu,
-        #                                                   sigma,
-        #                                                   retval=size,
-        #                                                   lowerbound=lowerbound,
-        #                                                   upperbound=upperbound)
-
-        # plt.hist(initial_diameter, int(np.ceil(up - lb)),
-        #          density=True, range=(0, up), alpha=0.7, rwidth=0.95)
-        # plt.title("Stage {} Volume Distribution".format(stage))
-        # plt.xlabel("Tumor Diameter [cm]")
-        # plt.ylabel("Frequency")
-        # plt.savefig("stage{}.pdf".format(stage))
-        # plt.close()
+        plt.hist(initial_diameter, int(np.ceil(ub - lb)),
+                 density=True, range=(0, ub), alpha=0.7, rwidth=0.95)
+        plt.title("Stage {} Volume Distribution".format(stage))
+        plt.xlabel("Tumor Diameter [cm]")
+        plt.ylabel("Frequency")
+        plt.savefig("stage{}.pdf".format(stage))
+        plt.close()
