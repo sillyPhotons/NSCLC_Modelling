@@ -1,72 +1,77 @@
 """
-    This file contains utility functions which can be used read comma separated 
-    data into numpy arrays, and plot visiualize them
+Author: Ruiheng Su 2020
+    
+This file contains utility functions used to parse csv files into numpy arrays, 
+and visiualize the data
 """
-
-import matplotlib.pyplot as plt
+import logging
 import numpy as np
-from scipy.optimize import curve_fit
 import matplotlib as mpl
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
 
-
-def func(x, a):
+def exponential(x, a):
     """
-    An exponential function used to fit the no-treatment data found in 
-    Detterbeck 2008.
+    Exponential decay function, returns the value of e^(-a*x) given arugments `x` and `a`. If `x` is a numpy array, then a numpy array is returned, if `x` is scalar, then a scalar is returned
 
-    x: numpy array of a scalar
-    a: decay parameter 
+    `x`: `numpy` array of a scalar
+    `a`: a scalar decay parameter 
     """
     return np.exp(-a*x)
 
-
-def read_file(data_array):
-    x = []
-    y = []
-
-    for num in range(len(data_array)):
-
-        x.append(data_array[num][0])
-        y.append(data_array[num][1])
-
-    x = np.array(x, dtype=float)
-    y = np.array(y, dtype=float)
-
-    return x, y
-
-
-def get_fitted_data(file_path, increment, interval = [0, 120]):
+def read_file(file_path, interval = [0, 60]):
     """
-    Returns the x,y array of data at `file_path` that has been fitted with an exponential decay model, with f(0) = 1
-
-    Requires: file at file_path exists 
-
-    `file_path`: string, path to the data file
-    `increment`: difference between x values in the array returned
-    `interval`: unused
+    
     """
+
+    assert(interval[0] >= 0 and interval[1] >= 0)
     dat = np.loadtxt(file_path, delimiter=',')
-    x, y = read_file(dat)
-    popt, pcov = curve_fit(func, x, y)
-    fitted_x = np.arange(interval[0], interval[1] + increment, increment)
-    fitted_y = func(fitted_x, popt[0])
+    x,y = np.hsplit(dat, 2)
+    x = np.around(x)
+
+    if interval[0] < x[0][0] or interval[1] > x[-1][0]:
+        logging.warning("Interval requested {} is not a subset of the data domain {}.".format(interval, [x[0][0], x[-1][0]]))
+
+    lb = np.where(x >= interval[0])[0]
+    ub = np.where(x <= interval[1])[0]
+   
+
+    if lb.size != 0 and ub.size != 0:
+        x = x[lb[0]:ub[-1]+1]
+        y = y[lb[0]:ub[-1]+1]
+    elif lb.size != 0 and ub.size == 0:
+        x = x[lb[0]:]
+        y = y[lb[0]:]
+    elif lb.size == 0 and ub.size != 0:
+        x = x[:ub[-1]]
+        y = y[:ub[-1]]
+
+    x = np.concatenate(x, axis=0 )
+    y = np.concatenate(y, axis=0 )
+
+    assert(x.size == y.size)
+
+    return x,y
+
+
+def get_fitted_data(x, y, increment):
+    """
+    
+    """
+    popt, pcov = curve_fit(exponential, x, y)
+    fitted_x = np.arange(x[0], x[-1] + increment, increment)
+    fitted_y = exponential(fitted_x, popt[0])
 
     return fitted_x, fitted_y
 
 
-def plot(data_array, curve_label, xlabel, ylabel, title, fit = False):
+def plot(x, y, curve_label, xlabel, ylabel, title, fit = False):
     """
-    `data_array`: numpy array whose elements are order pairs (x,y)
-    `curve_label`: name of the curve as seen in the legend
-    `x_label`: label to the x axis
-    `y_label`: label to the y axis
-    `title`: title to the plot
-    `fit`: if True, a fitted exponential decay curve will be plotted as well
+    
     """
-    x, y = read_file(data_array)
-    popt, pcov = curve_fit(func, x, y)
-    fitted_x = np.arange(min(x), max(x) + 0.5, 0.5)
-    fitted_y = func(fitted_x, *popt)
+    popt, pcov = curve_fit(exponential, x, y)
+    fitted_x = np.arange(x[0], x[-1] + 0.5, 0.5)
+    fitted_y = exponential(fitted_x, *popt)
 
     if fit:
         plt.plot(fitted_x, fitted_y, label="Fitted Curve")
@@ -84,27 +89,28 @@ if __name__ == "__main__":
     mpl.rcParams["font.family"] = "FreeSerif"
     plt.rc("text", usetex=True)
     plt.figure(dpi=100)
+    
+    print(read_file("./Data/stage1Better.csv", interval=[20, 30]))
+    # s1 = np.loadtxt("./Data/stage1Better.csv", delimiter=',')
+    # s2 = np.loadtxt("./Data/stage2Better.csv", delimiter=',')
+    # s3A = np.loadtxt("./Data/stage3ABetter.csv", delimiter=',')
+    # s3B = np.loadtxt("./Data/stage3BBetter.csv", delimiter=',')
+    # s4 = np.loadtxt("./Data/stage4Better.csv", delimiter=',')
+    # radiation = np.loadtxt("./Data/radiotherapy.csv", delimiter=',')
 
-    s1 = np.loadtxt("./Data/stage1Better.csv", delimiter=',')
-    s2 = np.loadtxt("./Data/stage2Better.csv", delimiter=',')
-    s3A = np.loadtxt("./Data/stage3ABetter.csv", delimiter=',')
-    s3B = np.loadtxt("./Data/stage3BBetter.csv", delimiter=',')
-    s4 = np.loadtxt("./Data/stage4Better.csv", delimiter=',')
-    radiation = np.loadtxt("./Data/radiotherapy.csv", delimiter=',')
-
-    # plot and show the data
-    # plot(s1, "Stage 1", "Survival Time [Months]",
-    #      "Proportion of Patients Alive", "KMSC From Data")
-    # plot(s2, "Stage 2", "Survival Time [Months]",
-    #      "Proportion of Patients Alive", "KMSC From Data")
-    # plot(s3A, "Stage 3A", "Survival Time [Months]",
-    #      "Proportion of Patients Alive", "KMSC From Data")
-    # plot(s3B, "Stage 3B", "Survival Time [Months]",
-    #      "Proportion of Patients Alive", "KMSC From Data")
-    # plot(s4, "Stage 4", "Survival Time [Months]",
-    #      "Proportion of Patients Alive", "KMSC From Data")
+    # # plot and show the data
+    # # plot(s1, "Stage 1", "Survival Time [Months]",
+    # #      "Proportion of Patients Alive", "KMSC From Data")
+    # # plot(s2, "Stage 2", "Survival Time [Months]",
+    # #      "Proportion of Patients Alive", "KMSC From Data")
+    # # plot(s3A, "Stage 3A", "Survival Time [Months]",
+    # #      "Proportion of Patients Alive", "KMSC From Data")
+    # # plot(s3B, "Stage 3B", "Survival Time [Months]",
+    # #      "Proportion of Patients Alive", "KMSC From Data")
+    # # plot(s4, "Stage 4", "Survival Time [Months]",
+    # #      "Proportion of Patients Alive", "KMSC From Data")
 
 
-    plot(radiation, "Radiotherapy", "Survival Time [Months]", "Proportion of Patients Alive", "KMSC From Data")    
-    plt.show()
+    # plot(radiation, "Radiotherapy", "Survival Time [Months]", "Proportion of Patients Alive", "KMSC From Data")    
+    # plt.show()
     

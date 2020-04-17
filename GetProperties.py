@@ -143,11 +143,11 @@ class PropertyManager ():
         """
         sigma1 = param1[1]
         sigma2 = param2[1]
-        lb1, ub1 = param1[2, 3]
-        lb2, ub2 = param1[2, 3]
-        print(lb1, ub1)
-        covariance_matrix = np.array([sigma1**2, corr * sigma1 * sigma2],
-                                     [corr * sigma1 * sigma2, sigma2**2])
+        lb1, ub1 = param1[2], param1[3]
+        lb2, ub2 = param2[2], param2[3]
+    
+        covariance_matrix = np.array([[sigma1**2, corr * sigma1 * sigma2],
+                                     [corr * sigma1 * sigma2, sigma2**2]])
 
         mean_array = np.array([param1[0], param2[0]])
 
@@ -211,9 +211,11 @@ class PropertyManager ():
         mu = np.log(c.TABLE2[stage][1])
         sigma = np.sqrt(2*(np.abs(np.log(c.TABLE2[stage][0]) - mu)))
 
-        params.add("rho_mu", value=7*10**-5, min=0, vary=False)
-        params.add("rho_sigma", value=7.23*10**-3, min=0, vary=False)
-        params.add('K', value=self.get_volume_from_diameter(30),
+        params.add("rho_mu", value=c.RHO[0],
+                   min=c.RHO[2], max=c.RHO[3], vary=False)
+        params.add("rho_sigma", value=c.RHO[1],
+                   min=c.RHO[2], max=c.RHO[3], vary=False)
+        params.add('K', value=self.get_volume_from_diameter(c.K),
                    min=0, vary=False)
         params.add('V_mu',
                    value=mu,
@@ -232,20 +234,22 @@ class PropertyManager ():
 
         params = Parameters()
 
-        params.add("rho_mu", value=7*10**-5, min=0, vary=False)
-        params.add("rho_sigma", value=7.23*10**-3, min=0, vary=False)
-        params.add('K', value=self.get_volume_from_diameter(30),
+        params.add("rho_mu", value=c.RHO[0],
+                   min=c.RHO[2], max=c.RHO[3], vary=False)
+        params.add("rho_sigma", value=c.RHO[1],
+                   min=c.RHO[2], max=c.RHO[3], vary=False)
+        params.add('K', value=self.get_volume_from_diameter(c.K),
                    min=0, vary=False)
         params.add("alpha_mu",
                    value=c.RAD_ALPHA[0],
                    vary=False,
-                   min=0,
-                   max=np.inf)
+                   min=c.RAD_ALPHA[2],
+                   max=c.RAD_ALPHA[3])
         params.add("alpha_sigma",
                    value=c.RAD_ALPHA[1],
                    vary=False,
-                   min=0,
-                   max=np.inf)
+                   min=c.RAD_ALPHA[2],
+                   max=c.RAD_ALPHA[3])
 
         return params
 
@@ -275,7 +279,8 @@ class PropertyManager ():
         for stage in stage_keys:
             if (stage_num_dict[stage] != 0):
                 V_mu = np.log(c.TABLE2[stage][1])
-                V_sigma = np.sqrt(2*(np.abs(np.log(c.TABLE2[stage][0]) - V_mu)))
+                V_sigma = np.sqrt(
+                    2*(np.abs(np.log(c.TABLE2[stage][0]) - V_mu)))
                 lb = c.REFER_TUMOR_SIZE_DIST[stage][2]
                 ub = c.REFER_TUMOR_SIZE_DIST[stage][3]
 
@@ -295,9 +300,9 @@ class PropertyManager ():
         """
         """
         treatment_delay = np.random.uniform(low=c.DIAGNOSIS_DELAY_RANGE[0],
-                                        high=c.DIAGNOSIS_DELAY_RANGE[1],
-                                        size=self.patient_size)
-        
+                                            high=c.DIAGNOSIS_DELAY_RANGE[1],
+                                            size=self.patient_size)
+
         treatment_days = np.zeros([self.patient_size, num_steps])
 
         for i in range(self.patient_size):
@@ -315,12 +320,17 @@ class PropertyManager ():
 
             for num in range(num_steps):
                 if (treatment_days[i][num] == 1):
-                    total_dose += 2/one_day
+                    total_dose += c.RAD_DOSE/one_day
 
-            print(total_dose)
+            try:
+                assert(total_dose == c.TOTAL_DOSE)
+            except Exception:
+                logging.error("Expected total dose of {} Gy, got {} Gy instead.".format(
+                    c.TOTAL_DOSE, total_dose))
 
         return treatment_days
-                    
+
+
 def generate_csv(csv_path, params, pop_manager):
     """
     Given the location of a csv file, a patient population is generated via 
@@ -373,7 +383,7 @@ if __name__ == "__main__":
 
     pop_man = PropertyManager(1)
 
-    print(pop_man.get_initial_diameters(0.5, 0.5, 0, 0, 0))
+    print(pop_man.get_radiation_days(10000))
 
     # size = pop_man.get_patient_size()
 

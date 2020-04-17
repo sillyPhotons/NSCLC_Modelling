@@ -10,6 +10,7 @@ import time
 import logging
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.stats import truncnorm
 from scipy.integrate import odeint
 from lmfit import minimize, Parameters
 
@@ -56,41 +57,29 @@ def sim_patient_death_time(num_steps, initial_volume, death_volume, func_pointer
 
 
 @ray.remote
-def sim_patient_death_time_with_radiation(num_steps, initial_volume, death_volume, treatment_delay, func_pointer, *func_args, **func_kwargs):
+def sim_death_time_with_radiation(num_steps, initial_volume, death_volume, treatment_days, func_pointer, *func_args, **func_kwargs):
     """
-    This function is decorated with `@ray.remote`, which means that it is a funciton that may be called multiple times in parallel. Given the parameters, returns a single integer equal to number of time steps taken before the patient tumor volume exceeds `death_volume`
-    `num_steps`: number of `RESOLUTION` steps to take
-    `initial_volume`: the initial tumor volume
-    `death_volume`: volume of tumor at which point the patient is considered dead
-    `func_pointer`: discrete time model of the model taking `*func_args` and `**func_kwargs` as parameters
+
     """
 
     cancer_volume = np.zeros(num_steps)
     cancer_volume[0] = initial_volume
     recover_prob = np.random.rand(num_steps)
-    delay_steps = int(treatment_delay/c.RESOLUTION)
-    skip = int(1/c.RESOLUTION) - 1
 
     death_time = None
-    total_dose = 0
-    skipped = False
     for i in range(1, num_steps):
 
-        if i > delay_steps and skipped == False:
+        cancer_volume[i] = func_pointer(
+            cancer_volume[i - 1], *func_args, **func_kwargs, dose_step=treatment_days[i-1])
 
-            cancer_volume[i] = func_pointer(
-                cancer_volume[i - 1], *func_args, **func_kwargs, dose_step = True)
+        if cancer_volume[i] > death_volume:
+            cancer_volume[i] = death_volume
+            death_time = i
+            break
 
-            if cancer_volume[i] > death_volume:
-                cancer_volume[i] = death_volume
-                death_time = i
-                break
-
-            # probability that the tumor was controlled
-            if recover_prob[i] < np.exp(-cancer_volume[i] * c.TUMOR_DENSITY):
-                return None
-
-            total_dose += 2
+        # probability that the tumor was controlled
+        if recover_prob[i] < np.exp(-cancer_volume[i] * c.TUMOR_DENSITY):
+            return None
 
     if (death_time is not None):
 
@@ -99,7 +88,7 @@ def sim_patient_death_time_with_radiation(num_steps, initial_volume, death_volum
         return None
 
 
-def predict_KMSC_discrete(params, x, pop_manager, func_pointer):
+def KMSC_No_Treatment(params, x, pop_manager, func_pointer):
     """
     Returns the x,y series to plot the KMSC for a patient population. x has units of months, and y is the proportion of patients alive. Every y value is reduced by `SURVIVAL_REDUCTION` found in `Constants.py`, except the point at x = 0.
 
@@ -119,8 +108,6 @@ def predict_KMSC_discrete(params, x, pop_manager, func_pointer):
 
     start = time.time()
 
-    from scipy.stats import truncnorm
-
     p = params.valuesdict()
     rho_mu = p['rho_mu']
     rho_sigma = p['rho_sigma']
@@ -129,7 +116,8 @@ def predict_KMSC_discrete(params, x, pop_manager, func_pointer):
     V_sigma = p['V_sigma']
 
     patient_size = pop_manager.get_patient_size()
-    num_steps = x.size
+    num_steps = int(x.size + x[0]/c.RESOLUTION)
+
     patients_alive = [patient_size] * num_steps
 
     ######################################################################
@@ -173,6 +161,8 @@ def predict_KMSC_discrete(params, x, pop_manager, func_pointer):
         patients_alive/patients_alive[0])*(1 - c.SURVIVAL_REDUCTION/100.)
     patients_alive[0] = 1.
 
+    patients_alive = patients_alive[int(
+        x[0]/c.RESOLUTION):int(x[-1]/c.RESOLUTION)+1]
     months = x/31.
 
     end = time.time()
@@ -218,8 +208,6 @@ def predict_VDT(params, x, pop_manager, func_pointer):
     """
 
     start = time.time()
-
-    from scipy.stats import truncnorm
 
     p = params.valuesdict()
     rho_mu = p['rho_mu']
@@ -272,62 +260,57 @@ def predict_VDT(params, x, pop_manager, func_pointer):
     return np.array(vdts)
 
 
-def reproduce_KMSC_discrete_with_radiation(params, x, pop_manager, func_pointer):
+def KMSC_With_Radiotherapy(params, x, pop_manager, func_pointer):
 
-    start = time.time()
+    start = time.time()  # start timing
 
-    from scipy.stats import truncnorm
+    p = params.valuesdict()
+    rho_mu = p['rho_mu']
+    rho_sigma = p['rho_sigma']
+    K = p['K']
+    alpha_mu = p['alpha_mu']
+    alpha_sigma = p['alpha_sigma']
 
     patient_size = pop_manager.get_patient_size()
-    num_steps = x.size
+    num_steps = int(x.size + x[0]/c.RESOLUTION)
     patients_alive = [patient_size] * num_steps
 
-    stage2_num = patient_size * c.RADIATION_ONLY_PATIENT_PERCENTAGE["2"]
-    stage3A_num = patient_size * c.RADIATION_ONLY_PATIENT_PERCENTAGE["3A"]
-    stage3B_num = patient_size * c.RADIATION_ONLY_PATIENT_PERCENTAGE["3B"]
+    initial_diameters = pop_manager.get_initial_diameters(
+        stage_1=0,
+        stage_2=c.RADIATION_ONLY_PATIENT_PERCENTAGE["2"],
+        stage_3A=c.RADIATION_ONLY_PATIENT_PERCENTAGE["3A"],
+        stage_3B=c.RADIATION_ONLY_PATIENT_PERCENTAGE["3B"],
+        stage_4=0)
 
-    stage_pop = {"2": int(stage2_num),
-                 "3A": int(stage3A_num),
-                 "3B": int(stage3B_num)}
+    initial_volume =\
+        pop_manager.get_volume_from_diameter(np.array(initial_diameters))
 
-    diameters = []
-    for stage in ["2", "3A", "3B"]:
-        V_mu = c.REFER_TUMOR_SIZE_DIST[stage][0]
-        V_sigma = c.REFER_TUMOR_SIZE_DIST[stage][1]
+    alpha = np.array([alpha_mu, alpha_sigma, c.RAD_ALPHA[2], c.RAD_ALPHA[3]])
+    rho = np.array([rho_mu, rho_sigma, params['rho_mu'].min, params['rho_mu'].max])
 
-        ######################################################################
-        lowerbound = (np.log(c.REFER_TUMOR_SIZE_DIST[stage][2]) -
-                      V_mu) / V_sigma
-        upperbound = (np.log(c.REFER_TUMOR_SIZE_DIST[stage][3]) -
-                      V_mu) / V_sigma
+    alpha_and_rho =\
+        pop_manager.sample_correlated_params(alpha,
+                                             rho,
+                                             c.GR_RS_CORRELATION,
+                                             retval=patient_size)
 
-        norm_rvs = truncnorm.rvs(lowerbound, upperbound, size=stage_pop[stage])
-
-        initial_diameter = list(np.exp(
-            (norm_rvs * V_sigma) + V_mu))
-        ######################################################################
-        diameters.append(initial_diameter)
-
-    initial_volume = pop_manager.get_volume_from_diameter(
-        np.array(diameters))
-
-    rad_alpha = np.array(c.RAD_ALPHA)
-    rho = np.array([7.00*10**-5, 7.23*10**-3])
-
-    rad_alpha_and_rho = pop_manager.sample_correlated_params(
-        rad_alpha, rho, c.GR_RS_CORRELATION, retval=patient_size)
-
-    treatment_delay = np.random.uniform(low=c.DIAGNOSIS_DELAY_RANGE[0],
-                                        high=c.DIAGNOSIS_DELAY_RANGE[1],
-                                        size=patient_size)
-
+    treatment_days = pop_manager.get_radiation_days(num_steps)
     death_volume = pop_manager.get_volume_from_diameter(c.DEATH_DIAMETER)
 
     id_list = list()
     for num in range(patient_size):
 
-        obj_id = sim_patient_death_time_with_radiation.remote(num_steps,
-                                        initial_volume[num], death_volume, treatment_delay[num], func_pointer, rad_alpha_and_rho[num, 1], pop_manager.get_volume_from_diameter(30), rad_alpha=rad_alpha_and_rho[num, 0], rad_beta=rad_alpha_and_rho[num, 0]/10.)
+        obj_id =\
+            sim_death_time_with_radiation.remote(num_steps,
+                                                 initial_volume[num],
+                                                 death_volume,
+                                                 treatment_days[num],
+                                                 func_pointer,
+                                                 alpha_and_rho[num, 1],
+                                                 K,
+                                                 rad_alpha=alpha_and_rho[num, 0],
+                                                 rad_beta=alpha_and_rho[num, 0]/10.
+                                                 )
 
         id_list.append(obj_id)
 
@@ -343,7 +326,8 @@ def reproduce_KMSC_discrete_with_radiation(params, x, pop_manager, func_pointer)
     patients_alive = (
         patients_alive/patients_alive[0])*(1 - c.SURVIVAL_REDUCTION/100.)
     patients_alive[0] = 1.
-
+    patients_alive = patients_alive[int(
+        x[0]/c.RESOLUTION):int(x[-1]/c.RESOLUTION)+1]
     months = x/31.
 
     end = time.time()

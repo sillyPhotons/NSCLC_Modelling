@@ -21,7 +21,7 @@ import time
 #     else:
 #         return 0
 
-def discrete_time_tumor_volume_GENG(previous_volume, growth_rate, K, rad_alpha=0, rad_beta=0, dose_step = False, h=RESOLUTION, noise=0):
+def discrete_time_tumor_volume_GENG(previous_volume, growth_rate, K, rad_alpha=0, rad_beta=0, dose_step = 0, h=RESOLUTION, noise=0):
     """
     Discrete time formulation of tumor volume function as seen in: 
     https://www.nature.com/articles/s41598-018-30761-7
