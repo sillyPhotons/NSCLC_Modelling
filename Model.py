@@ -117,162 +117,162 @@ def volume_doubling_time(V0, V1):
     return (365)*np.log(2) / np.log(V1/V0)
 
 
-def predict_volume_doubling_time(params, x, pop_manager):
-    """
-    Returns a list of volume doubling time evaluated for each patient generated
-    by the parameters specified by `params`. Can be used to plot the histogram 
-    of volume doubling times (VDTs)
+# def predict_volume_doubling_time(params, x, pop_manager):
+#     """
+#     Returns a list of volume doubling time evaluated for each patient generated
+#     by the parameters specified by `params`. Can be used to plot the histogram 
+#     of volume doubling times (VDTs)
 
-    `params`: Parameters object which must contain the following names as 
-    Parameter objects
-        `rho_mu`
-        `rho_sigma`
-        `K`
-        `V_mu`
-        `V_sigma`
-    `x`: numpy array representing time
-    `pop_manager`: `PropertyManager` object
-    """
+#     `params`: Parameters object which must contain the following names as 
+#     Parameter objects
+#         `rho_mu`
+#         `rho_sigma`
+#         `K`
+#         `V_mu`
+#         `V_sigma`
+#     `x`: numpy array representing time
+#     `pop_manager`: `PropertyManager` object
+#     """
 
-    p = params.valuesdict()
-    rho_mu = p['rho_mu']
-    rho_sigma = p['rho_sigma']
-    K = p['K']
-    V_mu = p['V_mu']
-    V_sigma = p['V_sigma']
+#     p = params.valuesdict()
+#     rho_mu = p['rho_mu']
+#     rho_sigma = p['rho_sigma']
+#     K = p['K']
+#     V_mu = p['V_mu']
+#     V_sigma = p['V_sigma']
 
-    patient_size = pop_manager.get_patient_size()
-    VDT_hist = []
+#     patient_size = pop_manager.get_patient_size()
+#     VDT_hist = []
 
-    for num in range(patient_size):
+#     for num in range(patient_size):
 
-        tumor_diameter = pop_manager.sample_lognormal_param(
-            mean=V_mu, std=V_sigma, retval=1, lowerbound=0.3, upperbound=5)[0]
+#         tumor_diameter = pop_manager.sample_lognormal_param(
+#             mean=V_mu, std=V_sigma, retval=1, lowerbound=0.3, upperbound=5)[0]
 
-        growth_rate = pop_manager.sample_normal_param(
-            mean=rho_mu, std=rho_sigma, retval=1, lowerbound=0, upperbound=None)[0]
+#         growth_rate = pop_manager.sample_normal_param(
+#             mean=rho_mu, std=rho_sigma, retval=1, lowerbound=0, upperbound=None)[0]
 
-        solved_diameter = odeint(gompertz_ode, tumor_diameter, x, args=(
-            growth_rate, K))
+#         solved_diameter = odeint(gompertz_ode, tumor_diameter, x, args=(
+#             growth_rate, K))
 
-        VDT_hist.append(volume_doubling_time(x, solved_diameter)[0][0])
+#         VDT_hist.append(volume_doubling_time(x, solved_diameter)[0][0])
 
-    return VDT_hist
-
-
-def predict_no_treatment_diameter(params, x, pop_manager):
-    """
-    Given a fixed set of parameters, an array representing time for which this 
-    model is evaluation on, and a PropertyManager object, returns the time array
-    and the result array of no treatment received model
-
-    params: Parameters object which must contain Parameter objects with the 
-    following names
-        rho_mu
-        rho_sigma
-        K
-        V_mu
-        V_sigma
-    x: numpy array representing time
-    pop_manager: PropertyManager object
-    """
-    p = params.valuesdict()
-    rho_mu = p['rho_mu']
-    rho_sigma = p['rho_sigma']
-    K = p['K']
-    V_mu = p['V_mu']
-    V_sigma = p['V_sigma']
-
-    patient_size = pop_manager.get_patient_size()
-    patients_alive = [patient_size] * len(x)
-    start = time.time()
-    print("Began model evaluation")
-
-    for num in range(patient_size):
-
-        tumor_diameter = pop_manager.sample_lognormal_param(
-            mean=V_mu, std=V_sigma, retval=1, lowerbound=0.3, upperbound=5)[0]
-        growth_rate = pop_manager.sample_normal_param(
-            mean=rho_mu, std=rho_sigma, retval=1, lowerbound=0, upperbound=None)[0]
-
-        solved_diameter = odeint(gompertz_ode, tumor_diameter, x, args=(
-            growth_rate, K))
-
-        try:
-            death_time = next(x for x, val in enumerate(solved_diameter)
-                              if val >= DEATH_DIAMETER)
-
-        except:
-            death_time = None
-
-        if (death_time is not None):
-            patients_alive = [(patients_alive[num] - 1) if num >=
-                              death_time else patients_alive[num] for num in range(len(x))]
-
-    patients_alive = np.array(patients_alive)
-    patients_alive = patients_alive/patients_alive[0]
-
-    end = time.time()
-    runtime = end - start
-    print("Predictive model evaluated in {} seconds.".format(runtime))
-
-    return x, patients_alive
+#     return VDT_hist
 
 
-def predict_no_treatment(params, x, pop_manager):
+# def predict_no_treatment_diameter(params, x, pop_manager):
+#     """
+#     Given a fixed set of parameters, an array representing time for which this 
+#     model is evaluation on, and a PropertyManager object, returns the time array
+#     and the result array of no treatment received model
 
-    p = params.valuesdict()
-    rho_mu = p['rho_mu']
-    rho_sigma = p['rho_sigma']
-    K = p['K']
-    V_mu = p['V_mu']
-    V_sigma = p['V_sigma']
+#     params: Parameters object which must contain Parameter objects with the 
+#     following names
+#         rho_mu
+#         rho_sigma
+#         K
+#         V_mu
+#         V_sigma
+#     x: numpy array representing time
+#     pop_manager: PropertyManager object
+#     """
+#     p = params.valuesdict()
+#     rho_mu = p['rho_mu']
+#     rho_sigma = p['rho_sigma']
+#     K = p['K']
+#     V_mu = p['V_mu']
+#     V_sigma = p['V_sigma']
 
-    patient_size = pop_manager.get_patient_size()
-    patients_alive = [patient_size] * len(x)
-    start = time.time()
-    print("Began model evaluation")
+#     patient_size = pop_manager.get_patient_size()
+#     patients_alive = [patient_size] * len(x)
+#     start = time.time()
+#     print("Began model evaluation")
 
-    for num in range(patient_size):
+#     for num in range(patient_size):
 
-        tumor_diameter = pop_manager.sample_lognormal_param(
-            mean=V_mu, std=V_sigma, retval=1, lowerbound=0.3, upperbound=5)[0]
-        growth_rate = pop_manager.sample_normal_param(
-            mean=rho_mu, std=rho_sigma, retval=1, lowerbound=0, upperbound=None)[0]
+#         tumor_diameter = pop_manager.sample_lognormal_param(
+#             mean=V_mu, std=V_sigma, retval=1, lowerbound=0.3, upperbound=5)[0]
+#         growth_rate = pop_manager.sample_normal_param(
+#             mean=rho_mu, std=rho_sigma, retval=1, lowerbound=0, upperbound=None)[0]
 
-        cell_number = pop_manager.get_tumor_cell_number_from_diameter(
-            tumor_diameter)
+#         solved_diameter = odeint(gompertz_ode, tumor_diameter, x, args=(
+#             growth_rate, K))
 
-        solved_cell_number = gompertz_analytical(
-            cell_number, x, growth_rate, K)
+#         try:
+#             death_time = next(x for x, val in enumerate(solved_diameter)
+#                               if val >= DEATH_DIAMETER)
 
-        # odeint(gompertz_ode, cell_number, x, args=(
-        #     growth_rate, K))
+#         except:
+#             death_time = None
 
-        solved_diameter = pop_manager.get_diameter_from_tumor_cell_number(
-            solved_cell_number)
+#         if (death_time is not None):
+#             patients_alive = [(patients_alive[num] - 1) if num >=
+#                               death_time else patients_alive[num] for num in range(len(x))]
 
-        # plt.plot(x, solved_diameter)
-        # plt.show()
+#     patients_alive = np.array(patients_alive)
+#     patients_alive = patients_alive/patients_alive[0]
 
-        try:
-            death_time = next(x for x, val in enumerate(solved_diameter)
-                              if val >= DEATH_DIAMETER)
+#     end = time.time()
+#     runtime = end - start
+#     print("Predictive model evaluated in {} seconds.".format(runtime))
 
-        except:
-            death_time = None
+#     return x, patients_alive
 
-        if (death_time is not None):
-            patients_alive = [(patients_alive[num] - 1) if num >=
-                              death_time else patients_alive[num] for num in range(len(x))]
 
-    patients_alive = np.array(patients_alive)
-    patients_alive = patients_alive/patients_alive[0]
-    end = time.time()
-    runtime = end - start
-    print("Predictive model evaluated in {} seconds.".format(runtime))
+# def predict_no_treatment(params, x, pop_manager):
 
-    return x, patients_alive
+#     p = params.valuesdict()
+#     rho_mu = p['rho_mu']
+#     rho_sigma = p['rho_sigma']
+#     K = p['K']
+#     V_mu = p['V_mu']
+#     V_sigma = p['V_sigma']
+
+#     patient_size = pop_manager.get_patient_size()
+#     patients_alive = [patient_size] * len(x)
+#     start = time.time()
+#     print("Began model evaluation")
+
+#     for num in range(patient_size):
+
+#         tumor_diameter = pop_manager.sample_lognormal_param(
+#             mean=V_mu, std=V_sigma, retval=1, lowerbound=0.3, upperbound=5)[0]
+#         growth_rate = pop_manager.sample_normal_param(
+#             mean=rho_mu, std=rho_sigma, retval=1, lowerbound=0, upperbound=None)[0]
+
+#         cell_number = pop_manager.get_tumor_cell_number_from_diameter(
+#             tumor_diameter)
+
+#         solved_cell_number = gompertz_analytical(
+#             cell_number, x, growth_rate, K)
+
+#         # odeint(gompertz_ode, cell_number, x, args=(
+#         #     growth_rate, K))
+
+#         solved_diameter = pop_manager.get_diameter_from_tumor_cell_number(
+#             solved_cell_number)
+
+#         # plt.plot(x, solved_diameter)
+#         # plt.show()
+
+#         try:
+#             death_time = next(x for x, val in enumerate(solved_diameter)
+#                               if val >= DEATH_DIAMETER)
+
+#         except:
+#             death_time = None
+
+#         if (death_time is not None):
+#             patients_alive = [(patients_alive[num] - 1) if num >=
+#                               death_time else patients_alive[num] for num in range(len(x))]
+
+#     patients_alive = np.array(patients_alive)
+#     patients_alive = patients_alive/patients_alive[0]
+#     end = time.time()
+#     runtime = end - start
+#     print("Predictive model evaluated in {} seconds.".format(runtime))
+
+#     return x, patients_alive
 
 
 def predict_KMSC_discrete(params, x, pop_manager, func_pointer):
@@ -323,7 +323,7 @@ def predict_KMSC_discrete(params, x, pop_manager, func_pointer):
 
     num_steps = x.size
 
-    death_volume = pop_manager.get_volume_from_diameter(DEATH_DIAMETER)
+    death_volume = pop_manager.get_volume_from_diameter(c.DEATH_DIAMETER)
     cancer_volume = np.zeros((patient_size, num_steps))
 
     pop_manager.count = 0
@@ -341,7 +341,7 @@ def predict_KMSC_discrete(params, x, pop_manager, func_pointer):
         for i in range(1, num_steps):
 
             cancer_volume[num, i] = func_pointer(
-                cancer_volume[num, i - 1], growth_rates[num], K, h=RESOLUTION)
+                cancer_volume[num, i - 1], growth_rates[num], K, h=c.RESOLUTION)
 
             if cancer_volume[num, i] > death_volume:
                 cancer_volume[num, i] = death_volume
