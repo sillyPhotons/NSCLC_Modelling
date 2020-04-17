@@ -273,6 +273,7 @@ def KMSC_With_Radiotherapy(params, x, pop_manager, func_pointer):
 
     patient_size = pop_manager.get_patient_size()
     num_steps = int(x.size + x[0]/c.RESOLUTION)
+    
     patients_alive = [patient_size] * num_steps
 
     initial_diameters = pop_manager.get_initial_diameters(
@@ -319,9 +320,10 @@ def KMSC_With_Radiotherapy(params, x, pop_manager, func_pointer):
 
     for times in death_times:
         if times is not None:
-            patients_alive = [(patients_alive[k] - 1) if k >=
-                              times else patients_alive[k] for k in range(num_steps)]
-
+            # patients_alive = [(patients_alive[k] - 1) if k >=
+            #                   times else patients_alive[k] for k in range(num_steps)]
+            patients_alive = [(patients_alive[k] - 1) if x[k] >=
+                              times * c.RESOLUTION else patients_alive[k] for k in range(num_steps)]
     patients_alive = np.array(patients_alive)
     patients_alive = (
         patients_alive/patients_alive[0])*(1 - c.SURVIVAL_REDUCTION/100.)

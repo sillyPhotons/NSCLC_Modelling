@@ -43,15 +43,15 @@ for stage in ["4"]:
     params.add('K',
                value=pop_manager.get_volume_from_diameter(30), min=0, vary=False)
     params.add('V_mu',
-               value=Constants.REFER_TUMOR_SIZE_DIST[stage][0],
+               value=Constants.TABLE3[stage][0],
                vary=False,
-               min=Constants.REFER_TUMOR_SIZE_DIST[stage][2],
-               max=Constants.REFER_TUMOR_SIZE_DIST[stage][3])
+               min=Constants.TABLE3[stage][2],
+               max=Constants.TABLE3[stage][3])
     params.add('V_sigma',
-               value=Constants.REFER_TUMOR_SIZE_DIST[stage][1],
+               value=Constants.TABLE3[stage][1],
                vary=False,
-               min=Constants.REFER_TUMOR_SIZE_DIST[stage][2],
-               max=Constants.REFER_TUMOR_SIZE_DIST[stage][3])
+               min=Constants.TABLE3[stage][2],
+               max=Constants.TABLE3[stage][3])
 
     dat = np.loadtxt("./Data/stage{}Better.csv".format(stage), delimiter=',')
     x, data = rd.read_file(dat)

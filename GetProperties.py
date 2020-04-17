@@ -220,13 +220,13 @@ class PropertyManager ():
         params.add('V_mu',
                    value=mu,
                    vary=False,
-                   min=c.REFER_TUMOR_SIZE_DIST[stage][2],
-                   max=c.REFER_TUMOR_SIZE_DIST[stage][3])
+                   min=c.TABLE3[stage][2],
+                   max=c.TABLE3[stage][3])
         params.add('V_sigma',
                    value=sigma,
                    vary=False,
-                   min=c.REFER_TUMOR_SIZE_DIST[stage][2],
-                   max=c.REFER_TUMOR_SIZE_DIST[stage][3])
+                   min=c.TABLE3[stage][2],
+                   max=c.TABLE3[stage][3])
 
         return params
 
@@ -281,8 +281,8 @@ class PropertyManager ():
                 V_mu = np.log(c.TABLE2[stage][1])
                 V_sigma = np.sqrt(
                     2*(np.abs(np.log(c.TABLE2[stage][0]) - V_mu)))
-                lb = c.REFER_TUMOR_SIZE_DIST[stage][2]
-                ub = c.REFER_TUMOR_SIZE_DIST[stage][3]
+                lb = c.TABLE3[stage][2]
+                ub = c.TABLE3[stage][3]
 
                 lowerbound = (np.log(lb) - V_mu) / V_sigma
                 upperbound = (np.log(ub) - V_mu) / V_sigma
@@ -376,7 +376,7 @@ def generate_csv(csv_path, params, pop_manager):
 
 if __name__ == "__main__":
 
-    from Constants import REFER_TUMOR_SIZE_DIST, TABLE2
+    from Constants import TABLE3, TABLE2
     from scipy.stats import truncnorm
     plt.rc("text", usetex=True)
     plt.rcParams['font.family'] = 'serif'

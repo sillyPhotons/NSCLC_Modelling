@@ -2,100 +2,112 @@
     This file contains the implementation of equations and models in Geng's 
     paper, which are used by the Main file, or the CostFunction file 
 """
+import time
 import logging
 import numpy as np
-import matplotlib.pyplot as plt
-from lmfit import minimize, Parameters
-from scipy.integrate import odeint
+import Constants as c
 from ReadData import read_file
-from Constants import DEATH_DIAMETER, RESOLUTION, RAD_DOSE
-import time
+import matplotlib.pyplot as plt
+from scipy.integrate import odeint
+from lmfit import minimize, Parameters
 
-# def radiation_dose (dose_step = False):
-#     """
-#     Returns a value equal to the radiation dose if `dose_step` is true
-#     """
-
-#     if dose_step:
-#         return 2 
-#     else:
-#         return 0
-
-def discrete_time_tumor_volume_GENG(previous_volume, growth_rate, K, rad_alpha=0, rad_beta=0, dose_step = 0, h=RESOLUTION, noise=0):
+def discrete_time_tumor_volume_GENG(previous_volume, growth_rate, K, rad_alpha=0, rad_beta=0, dose_step = 0, noise=0):
     """
     Discrete time formulation of tumor volume function as seen in: 
     https://www.nature.com/articles/s41598-018-30761-7
+
+    Return tumor volume one `c.RESOLUTION` time step ahead.
+
+    Requires:
+    - `previous_volume` is non zero
+    - All arguments are scalars
     """
     dose = 0
     if dose_step:
-        dose = RAD_DOSE
+        dose = c.RAD_DOSE*c.RESOLUTION
 
-    return previous_volume * np.exp(growth_rate * h * np.log(K/previous_volume) - (rad_alpha*dose + rad_beta*dose**2))
+    return previous_volume * np.exp(growth_rate * c.RESOLUTION * np.log(K/previous_volume) - (rad_alpha*dose + rad_beta*dose**2)) + noise
 
 
-def rk4_tumor_volume(previous_volume, growth_rate, K, rad_alpha=0, rad_beta=0, dose_step = False, h=RESOLUTION, noise=0):
+def rk4_tumor_volume(previous_volume, growth_rate, K, rad_alpha=0, rad_beta=0, dose_step = False, noise=0):
     """
+    4th Order Runge Kutta method to solve the ODE (Equation 7)
+
+    Return tumor volume one `c.RESOLUTION` time step ahead.
+    
+    Requires:
+    - `previous_volume` is non zero
+    - All arguments are scalars
     """
 
     dose = 0
     if dose_step:
-        dose = RAD_DOSE
+        dose = c.RAD_DOSE*c.RESOLUTION
 
     k1 = previous_volume * growth_rate * \
         np.log(K / previous_volume) - (rad_alpha*dose + rad_beta*dose**2)* previous_volume
 
-    k2 = (previous_volume + h * k1 / 2.) * growth_rate * \
-        np.log(K / (previous_volume + h * k1 / 2.)) - (rad_alpha*dose + rad_beta*dose**2) * (previous_volume + h * k1 / 2.)
+    k2 = (previous_volume + c.RESOLUTION * k1 / 2.) * growth_rate * \
+        np.log(K / (previous_volume + c.RESOLUTION * k1 / 2.)) - (rad_alpha*dose + rad_beta*dose**2) * (previous_volume + c.RESOLUTION * k1 / 2.)
 
-    k3 = (previous_volume + h * k2 / 2.) * growth_rate * \
-        np.log(K / (previous_volume + h * k2 / 2.)) - (rad_alpha*dose + rad_beta*dose**2) * (previous_volume + h * k2 / 2.)
+    k3 = (previous_volume + c.RESOLUTION * k2 / 2.) * growth_rate * \
+        np.log(K / (previous_volume + c.RESOLUTION * k2 / 2.)) - (rad_alpha*dose + rad_beta*dose**2) * (previous_volume + c.RESOLUTION * k2 / 2.)
 
-    k4 = (previous_volume + h * k3) * growth_rate * \
-        np.log(K / (previous_volume + h * k3)) - (rad_alpha*dose + rad_beta*dose**2) * (previous_volume + h * k3)
+    k4 = (previous_volume + c.RESOLUTION * k3) * growth_rate * \
+        np.log(K / (previous_volume + c.RESOLUTION * k3)) - (rad_alpha*dose + rad_beta*dose**2) * (previous_volume + c.RESOLUTION * k3)
 
-    return previous_volume + (1./6) * h * (k1 + 2*k2 + 2*k3 + k4) 
+    return previous_volume + (1./6) * c.RESOLUTION * (k1 + 2*k2 + 2*k3 + k4) + noise
 
 
-def euler_tumor_volume(previous_volume, growth_rate, K, rad_alpha=0, rad_beta=0, dose_step = False, h=RESOLUTION, noise=0):
+def euler_tumor_volume(previous_volume, growth_rate, K, rad_alpha=0, rad_beta=0, dose_step = False, noise=0):
     """
-    Discrete time formulation of tumor volume via linear approximation
+    Euler's method to solve the ODE (Equation 7)
+
+    Return tumor volume one `c.RESOLUTION` time step ahead.
+    
+    Requires:
+    - `previous_volume` is non zero
+    - All arguments are scalars
     """
+
     dose = 0
     if dose_step:
-        dose = RAD_DOSE
+        dose = c.RAD_DOSE*c.RESOLUTION
 
-    return previous_volume + h * previous_volume * growth_rate * np.log(K / previous_volume) - (rad_alpha*dose + rad_beta*dose**2)*previous_volume
-
-
-def gompertz_ode(N, t, growth_rate, K):
-    """
-    Evaluates the right hand side of Equation 1. 
-
-    N: A double value scalar
-    t: numpy array representing time
-    growth_rate: a scalar
-    K: a scalar
-    """
-
-    dNdt = growth_rate*N*np.log(K/N)
-
-    return dNdt
+    return previous_volume + c.RESOLUTION * previous_volume * growth_rate * np.log(K / previous_volume) - (rad_alpha*dose + rad_beta*dose**2)*previous_volume + noise
 
 
-def gompertz_analytical(N0, t, growth_rate, K):
-    """
-    Returns a numpy array of gompertz equation evaluated at time = elements of provided parameter t.
+"""
+Discrete time implementation was better
+"""
+# def gompertz_ode(N, t, growth_rate, K):
+#     """
+#     Evaluates the right hand side of Equation 1. 
 
-    N0: Initial value at time = t[0]
-    t: numpy array representing time
-    growth_rate: scalar
-    K: double scalar
-    """
+#     N: A double value scalar
+#     t: numpy array representing time
+#     growth_rate: a scalar
+#     K: a scalar
+#     """
 
-    # t = np.array(t)
-    N = K * \
-        np.exp(np.log(N0/K)*np.exp(-1.*growth_rate*t))
-    return N
+#     dNdt = growth_rate*N*np.log(K/N)
+
+#     return dNdt
+
+
+# def gompertz_analytical(N0, t, growth_rate, K):
+#     """
+#     Returns a numpy array of gompertz equation evaluated at time = elements of provided parameter t.
+
+#     N0: Initial value at time = t[0]
+#     t: numpy array representing time
+#     growth_rate: scalar
+#     K: double scalar
+#     """
+
+#     N = K * \
+#         np.exp(np.log(N0/K)*np.exp(-1.*growth_rate*t))
+#     return N
 
 
 def volume_doubling_time(V0, V1):

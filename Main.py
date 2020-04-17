@@ -17,7 +17,9 @@ import GetProperties as gp
 import ParallelPredict as pp
 from Result import ResultObj, ResultManager
 
-logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
+# configure logging
+logging.basicConfig(
+    format='%(asctime)s %(levelname)s: %(message)s', datefmt='%m/%d/%Y %I:%M', level=logging.INFO)
 ray.init()
 
 
@@ -56,7 +58,7 @@ pop_manager = gp.PropertyManager(monte_carlo_patient_size)
 
 res_manager = ResultManager()
 
-for stage in Constants.REFER_TUMOR_SIZE_DIST.keys():
+for stage in Constants.TABLE3.keys():
     # for stage in ["4"]:
     """
     Parameters object, we add Parameter objects to it, and we can specify
@@ -78,15 +80,15 @@ for stage in Constants.REFER_TUMOR_SIZE_DIST.keys():
                min=0,
                vary=False)
     params.add('V_mu',
-               value=Constants.REFER_TUMOR_SIZE_DIST[stage][0],
+               value=Constants.TABLE3[stage][0],
                vary=False,
-               min=Constants.REFER_TUMOR_SIZE_DIST[stage][2],
-               max=Constants.REFER_TUMOR_SIZE_DIST[stage][3])
+               min=Constants.TABLE3[stage][2],
+               max=Constants.TABLE3[stage][3])
     params.add('V_sigma',
-               value=Constants.REFER_TUMOR_SIZE_DIST[stage][1],
+               value=Constants.TABLE3[stage][1],
                vary=True,
-               min=Constants.REFER_TUMOR_SIZE_DIST[stage][2],
-               max=Constants.REFER_TUMOR_SIZE_DIST[stage][3])
+               min=Constants.TABLE3[stage][2],
+               max=Constants.TABLE3[stage][3])
 
     dat = np.loadtxt("./Data/stage{}Better.csv".format(stage), delimiter=',')
     x, data = rd.read_file(dat)
