@@ -144,7 +144,8 @@ def KMSC_No_Treatment(params, x, pop_manager, func_pointer):
     for num in range(patient_size):
 
         obj_id = sim_patient_death_time.remote(num_steps,
-                                               initial_volume[num], death_volume, func_pointer, growth_rates[num], K)
+                                               initial_volume[num],
+                                               death_volume, func_pointer, growth_rates[num], K)
 
         id_list.append(obj_id)
 
@@ -273,7 +274,7 @@ def KMSC_With_Radiotherapy(params, x, pop_manager, func_pointer):
 
     patient_size = pop_manager.get_patient_size()
     num_steps = int(x.size + x[0]/c.RESOLUTION)
-    
+
     patients_alive = [patient_size] * num_steps
 
     initial_diameters = pop_manager.get_initial_diameters(
@@ -287,7 +288,8 @@ def KMSC_With_Radiotherapy(params, x, pop_manager, func_pointer):
         pop_manager.get_volume_from_diameter(np.array(initial_diameters))
 
     alpha = np.array([alpha_mu, alpha_sigma, c.RAD_ALPHA[2], c.RAD_ALPHA[3]])
-    rho = np.array([rho_mu, rho_sigma, params['rho_mu'].min, params['rho_mu'].max])
+    rho = np.array(
+        [rho_mu, rho_sigma, params['rho_mu'].min, params['rho_mu'].max])
 
     alpha_and_rho =\
         pop_manager.sample_correlated_params(alpha,
@@ -309,8 +311,8 @@ def KMSC_With_Radiotherapy(params, x, pop_manager, func_pointer):
                                                  func_pointer,
                                                  alpha_and_rho[num, 1],
                                                  K,
-                                                 rad_alpha=alpha_and_rho[num, 0],
-                                                 rad_beta=alpha_and_rho[num, 0]/10.
+                                                 alpha=alpha_and_rho[num, 0],
+                                                 beta=alpha_and_rho[num, 0]/10.
                                                  )
 
         id_list.append(obj_id)

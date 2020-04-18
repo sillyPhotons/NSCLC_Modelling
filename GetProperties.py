@@ -1,3 +1,9 @@
+"""
+Author: Ruiheng Su 2020
+
+File containing definition of `PropertyManager` class.
+"""
+
 import csv
 import logging
 import numpy as np
@@ -12,30 +18,54 @@ import Constants as c
 
 class PropertyManager ():
     """
-    PropertyManager class, each PropertyManager object is associated with a 
-    single property, patient_size, which is an integer.
-
-    It is passed to the cost function and other models provide sampling 
-    methods from normal and lognomral distributions, and other conversion 
-    methods to convert between values of tumor volume, diameter and cell number
+    Each `PropertyManager` object is associated with a integer `patient_size`.
+    It contains function members that enables sampling normal and
+    lognomral distributions and conversion methods between tumor parameters
     """
 
     def __init__(self, patient_size):
+        """
+        Params::
+            `patient_size`: integer representing the number of patients in the Monte Carlo patient population
+
+        Requires::
+            `patient_size` is an integer
+
+        Raises::
+            Assertion error if argument `patient_size` is not an integer 
+        """
+
+        assert(isinstance(patient_size, int))
+
         self.patient_size = patient_size
         self.count = 0  # utility variable
 
-    def sample_normal_param(self, mean, std, retval=1, upperbound=None, lowerbound=None):
+    def sample_normal_param(self, mean, std, retval=1, lowerbound=None,upperbound=None):
         """
-        Given the mean and the standard deviation, this method returns an array 
-        of samples from the specified normal distribution, with the number of
-        samples equal to retval.
+        Returns a numpy array or a python list of samples from a univariate 
+        normal given `mean` and standard deviation (`std`) of the distribution.
 
-        `mean`: mean of the normal distribution
-        `std`: standard deviation of the normal distribution
-        `retval`: integer number of values to return
-        `upperbound`, `lowerbound`: upper and lowe bound of returned values
+        If the no upper and/or lower bound values are supplied, then a numpy 
+        array with number of elements equal to `retval` is returned`.
 
-        Requires: `upperbound` >= `lowerbound` 
+        If either upper or lower bound value is supplied, then a python list is 
+        returned
+
+        Params::
+            `mean`: mean of the normal distribution, scalar
+            
+            `std`: standard deviation of the normal distribution
+            
+            `retval`: integer number of values to return
+            
+            `upperbound`, `lowerbound`: upper and lower bound of returned values
+
+        Requires::
+            `upperbound > lowerbound`
+            `!(mean == 0 and std == 0)`
+
+        Raises::
+            Assertion error if  `upperbound < lowerbound`
         """
 
         if (upperbound == None and lowerbound == None):
@@ -68,7 +98,8 @@ class PropertyManager ():
 
         else:
 
-            assert(upperbound >= lowerbound)
+            assert(upperbound > lowerbound)
+
             data = list()
             i = 0
             while i < retval:
@@ -79,18 +110,34 @@ class PropertyManager ():
                     i += 1
             return data
 
-    def sample_lognormal_param(self, mean, std, retval=1, lowerbound=None, upperbound=None):
+    def sample_lognormal_param(self, mean, std, retval=1, lowerbound=None,\
+         upperbound=None):
         """
-        Given the mean and the standard deviation, this method returns an array 
-        of samples from the specified lognormal distribution, with the number of
-        samples equal to retval.
+        Returns a numpy array or a python list of samples from a univariate 
+        log normal given `mean` and standard deviation (`std`) of the 
+        underlying distribution.
 
-        `mean`: mean of the normal distribution
-        `std`: standard deviation of the normal distribution
-        `retval`: integer number of values to return
-        `upperbound`, `lowerbound`: upper and lowe bound of returned values
+        If the no upper and/or lower bound values are supplied, then a numpy 
+        array with number of elements equal to `retval` is returned`.
 
-        Requires: `upperbound` >= `lowerbound` 
+        If either upper or lower bound value is supplied, then a python list is 
+        returned
+
+        Params::
+            `mean`: mean of the underlying normal distribution, scalar
+            
+            `std`: standard deviation of the underlying normal distribution
+            
+            `retval`: integer number of values to return
+            
+            `upperbound`, `lowerbound`: upper and lower bound of returned values
+
+        Requires::
+            `upperbound > lowerbound`
+            `!(mean == 0 and std == 0)`
+
+        Raises::
+            Assertion error if  `upperbound < lowerbound`
         """
 
         if (upperbound == None and lowerbound == None):
@@ -123,6 +170,9 @@ class PropertyManager ():
             return data
 
         else:
+
+            assert(upperbound > lowerbound)
+
             data = list()
             i = 0
             while i < retval:
@@ -134,20 +184,38 @@ class PropertyManager ():
 
     def sample_correlated_params(self, param1, param2, corr, retval=1):
         """
-        Given (mean, sigma, lowerbound, upperbound) of two values, and linear correlation coefficient, samples from a multivariate normal distribution a number of ordered pairs equal to `retval`. The sampled pairs are returned in a single numpy array with dimensions (2 by retval)
+        Given (mean, sigma, lowerbound, upperbound) of two values, and their 
+        linear correlation coefficient, samples from a multivariate normal 
+        distribution a number of ordered pairs equal to `retval`. The sampled 
+        pairs are returned in a single numpy array with dimensions (2 by retval)
 
-        `param1`: numpy array with 2 elements. `param1[0]` is the mean of the parameter, and `param1[1]` is the standard deviation
-        `param2`: numpy array with 2 elements. `param2[0]` is the mean of the parameter, and `param2[1]` is the standard deviation
-        `corr`: linear correlation coefficient of `param1` and `param2`. corr = (covariance of param1 and param2)/((sigma of param1)*(sigma of param 2))
-        `retval`: number of ordered pairs to return 
+        Params::
+            `param1`: numpy array with 2 elements. `param1[0]` is the mean of the parameter, `param1[1]` is the standard deviation, `param1[2]` is the lower bound this parameter, and `param1[3]` is the upper bound of this parameter
+            
+            `param2`: numpy array with 2 elements. `param2[0]` is the mean of the parameter, and `param2[1]` is the standard deviation, `param2[2]` is the lower bound this parameter, and `param2[3]` is the upper bound of this parameter
+            
+            `corr`: linear correlation coefficient of `param1` and `param2`. corr = (covariance of param1 and param2)/((sigma of param1)*(sigma of param 2))
+            
+            `retval`: number of ordered pairs to return 
+        
+        Requires::
+            The upper and lower bound values are not `None`. Use `np.inf` instead
+
+        Raises::
+            Assertion error if any lower/upperbound values are `None`
         """
         sigma1 = param1[1]
         sigma2 = param2[1]
         lb1, ub1 = param1[2], param1[3]
         lb2, ub2 = param2[2], param2[3]
-    
+
+        assert(lb1 is not None)
+        assert(ub1 is not None)
+        assert(lb2 is not None)
+        assert(ub2 is not None)
+
         covariance_matrix = np.array([[sigma1**2, corr * sigma1 * sigma2],
-                                     [corr * sigma1 * sigma2, sigma2**2]])
+                                      [corr * sigma1 * sigma2, sigma2**2]])
 
         mean_array = np.array([param1[0], param2[0]])
 
@@ -170,7 +238,13 @@ class PropertyManager ():
         return self.patient_size
 
     def get_volume_from_diameter(self, diameter_array):
-
+        """
+        Given a numpy array with elements representing tumor diameter, converts 
+        each element to tumor volume assuming Spherical tumor  
+        
+        Params::
+            `diameter_array`: numpy array
+        """
         return 4. / 3. * np.pi * (diameter_array / 2.) ** 3
 
     def get_diameter_from_volume(self, volume_array):
@@ -374,16 +448,16 @@ def generate_csv(csv_path, params, pop_manager):
     return csv_path
 
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-    from Constants import TABLE3, TABLE2
-    from scipy.stats import truncnorm
-    plt.rc("text", usetex=True)
-    plt.rcParams['font.family'] = 'serif'
+#     from Constants import TABLE3, TABLE2
+#     from scipy.stats import truncnorm
+#     plt.rc("text", usetex=True)
+#     plt.rcParams['font.family'] = 'serif'
 
-    pop_man = PropertyManager(1)
+#     pop_man = PropertyManager(1)
 
-    print(pop_man.get_radiation_days(10000))
+#     print(pop_man.get_radiation_days(10000))
 
     # size = pop_man.get_patient_size()
 

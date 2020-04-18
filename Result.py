@@ -72,7 +72,7 @@ class ResultManager():
         within the `ResultObj` objects in a folder with the name as the
         `comment` string preceeding a timestamp
 
-        Params:
+        Params::
             `result`: a `MinimizerResult` object
 
             `*args*`: a variable number of `ResultObj` objects
@@ -112,7 +112,7 @@ class ResultManager():
         within the `ResultObj` objects in a folder with the name as the
         `comment` string preceeding a timestamp
 
-        Params:
+        Params::
             `result`: a `MinimizerResult` object
 
             `*args*`: a variable number of `ResultObj` objects
@@ -120,7 +120,7 @@ class ResultManager():
             `comment`: string which preceeds the folder name
         """
 
-        plt.rc("Ptext", usetex=True)
+        plt.rc("text", usetex=True)
         plt.rcParams['font.family'] = 'serif'
 
         now = datetime.now().strftime("%d_%m_%Y_%H:%M:%S")

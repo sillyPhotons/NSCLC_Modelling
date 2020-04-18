@@ -12,19 +12,41 @@ from scipy.optimize import curve_fit
 
 def exponential(x, a):
     """
-    Exponential decay function, returns the value of e^(-a*x) given arugments `x` and `a`. If `x` is a numpy array, then a numpy array is returned, if `x` is scalar, then a scalar is returned
+    Exponential decay function, returns the value of e^(-a*x) given arugments 
+    `x` and `a`. If `x` is a numpy array, then a numpy array is returned, if
+    `x` is scalar, then a scalar is returned
 
-    `x`: `numpy` array of a scalar
-    `a`: a scalar decay parameter 
+    Params::
+        `x`: `numpy` array of a scalar
+        
+        `a`: a scalar decay parameter 
     """
     return np.exp(-a*x)
 
 def read_file(file_path, interval = [0, 60]):
     """
+    Returns two numpy arrays respectively representing the x and y series in a
+    *.csv file specified by the `file_path` parameter. The returned numpy arrays
+    is the intersection between `interval` and the original domain of the x
+    data in the data file  
+
+    Params::
+        `file_path`: string to a *.csv data file with 2 columns. Each row represents one ordered (x,y) pair.
+        
+        `interval`: a python list, or a numpy array with 2 elements. `interval[0]` represents the lower bound and `interval[1]` represents the upper bound of the domain
     
+    Requires:
+        `interval[0] >= 0`
+        `interval[1] >= 0`
+        `interval[1] >= interval[0]`
+
+    Raises:
+        Assertion errors for violations of requirements
     """
 
     assert(interval[0] >= 0 and interval[1] >= 0)
+    assert(interval[0] <= interval[1])
+
     dat = np.loadtxt(file_path, delimiter=',')
     x,y = np.hsplit(dat, 2)
     x = np.around(x)
@@ -35,29 +57,45 @@ def read_file(file_path, interval = [0, 60]):
     lb = np.where(x >= interval[0])[0]
     ub = np.where(x <= interval[1])[0]
    
-
     if lb.size != 0 and ub.size != 0:
         x = x[lb[0]:ub[-1]+1]
         y = y[lb[0]:ub[-1]+1]
-    elif lb.size != 0 and ub.size == 0:
-        x = x[lb[0]:]
-        y = y[lb[0]:]
-    elif lb.size == 0 and ub.size != 0:
-        x = x[:ub[-1]]
-        y = y[:ub[-1]]
 
-    x = np.concatenate(x, axis=0 )
-    y = np.concatenate(y, axis=0 )
+        x = np.concatenate(x, axis=0 )
+        y = np.concatenate(y, axis=0 )
 
-    assert(x.size == y.size)
-
+    else:
+        x = np.array([])
+        y = np.array([])
+    
     return x,y
 
 
 def get_fitted_data(x, y, increment):
     """
-    
+    Given `x` and `y` numpy arrays, returns two arrays representing points on a 
+    KMSC that has been fitted with an exponential model. The x increments of 
+    that data points are given by the scalar value `increment`.
+
+    Params::
+        `x`: numpy array
+
+        `y`: numpy array
+
+        `increment`: scalar value
+
+    Requires::
+        `increment > 0`
+        `x.size > 0`
+        `y.size > 0`
+
+    Raises::
+        Assertion error if `increment <= 0`
     """
+
+    assert(increment > 0)
+    assert(x.size > 0 and y.size > 0)
+    
     popt, pcov = curve_fit(exponential, x, y)
     fitted_x = np.arange(x[0], x[-1] + increment, increment)
     fitted_y = exponential(fitted_x, popt[0])
@@ -67,7 +105,24 @@ def get_fitted_data(x, y, increment):
 
 def plot(x, y, curve_label, xlabel, ylabel, title, fit = False):
     """
-    
+    Plots the given `x` and `y` array with the given `xlabel`, `ylabel`, 
+    `title`. If `fit = True`, then an exponential fit is also drawn on the same 
+    plot
+
+    Params::
+        `x`: numpy array
+
+        `y`: numpy array
+
+        `curve_label`: string, label of the curve as seen in the legend of generated plot
+
+        `xlabel`: string, label of the x axis
+
+        `ylabel`: string, label of the y axis
+
+        `title`: string, title of the plot
+
+        `fit`: boolean
     """
     popt, pcov = curve_fit(exponential, x, y)
     fitted_x = np.arange(x[0], x[-1] + 0.5, 0.5)
@@ -82,35 +137,5 @@ def plot(x, y, curve_label, xlabel, ylabel, title, fit = False):
     plt.legend()
     plt.minorticks_on()
     plt.title(title)
-
-
-if __name__ == "__main__":
-
-    mpl.rcParams["font.family"] = "FreeSerif"
-    plt.rc("text", usetex=True)
-    plt.figure(dpi=100)
-    
-    print(read_file("./Data/stage1Better.csv", interval=[20, 30]))
-    # s1 = np.loadtxt("./Data/stage1Better.csv", delimiter=',')
-    # s2 = np.loadtxt("./Data/stage2Better.csv", delimiter=',')
-    # s3A = np.loadtxt("./Data/stage3ABetter.csv", delimiter=',')
-    # s3B = np.loadtxt("./Data/stage3BBetter.csv", delimiter=',')
-    # s4 = np.loadtxt("./Data/stage4Better.csv", delimiter=',')
-    # radiation = np.loadtxt("./Data/radiotherapy.csv", delimiter=',')
-
-    # # plot and show the data
-    # # plot(s1, "Stage 1", "Survival Time [Months]",
-    # #      "Proportion of Patients Alive", "KMSC From Data")
-    # # plot(s2, "Stage 2", "Survival Time [Months]",
-    # #      "Proportion of Patients Alive", "KMSC From Data")
-    # # plot(s3A, "Stage 3A", "Survival Time [Months]",
-    # #      "Proportion of Patients Alive", "KMSC From Data")
-    # # plot(s3B, "Stage 3B", "Survival Time [Months]",
-    # #      "Proportion of Patients Alive", "KMSC From Data")
-    # # plot(s4, "Stage 4", "Survival Time [Months]",
-    # #      "Proportion of Patients Alive", "KMSC From Data")
-
-
-    # plot(radiation, "Radiotherapy", "Survival Time [Months]", "Proportion of Patients Alive", "KMSC From Data")    
-    # plt.show()
+    plt.show()
     

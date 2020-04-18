@@ -1,7 +1,8 @@
 """
 Author: Ruiheng Su 2020
 
-File containing implementations of discrete time models of Equation (7) in Geng's paper, and a function to calculate volume doubling time 
+File containing implementations of discrete time models of Equation (7) in 
+Geng's paper, and a function to calculate volume doubling time 
 """
 import time
 import logging
