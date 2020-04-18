@@ -239,19 +239,34 @@ class PropertyManager ():
 
     def get_volume_from_diameter(self, diameter_array):
         """
-        Given a numpy array with elements representing tumor diameter, converts 
-        each element to tumor volume assuming Spherical tumor  
+        Given a numpy array with elements representing tumor diameter [cm], 
+        converts each element to tumor volume [cm^3] assuming spherical tumor  
         
         Params::
             `diameter_array`: numpy array
         """
+
         return 4. / 3. * np.pi * (diameter_array / 2.) ** 3
 
     def get_diameter_from_volume(self, volume_array):
+        """
+        Given a numpy array with elements representing tumor volume [cm^3], 
+        converts each element to tumor diameter [cm] assuming spherical tumor  
+        
+        Params::
+            `volume_array`: numpy array
+        """
 
         return np.cbrt((volume_array / (4./3. * np.pi))) * 2.
 
     def get_tumor_cell_number_from_diameter(self, diameter_array):
+        """
+        Given a numpy array with elements representing tumor diameter [cm], 
+        converts each element to tumor cell number assuming spherical tumor  
+        
+        Params::
+            `diameter_array`: numpy array
+        """
 
         volume_array = self.get_volume_from_diameter(diameter_array)
         cell_number_array = volume_array * c.TUMOR_DENSITY
@@ -259,18 +274,39 @@ class PropertyManager ():
         return cell_number_array
 
     def get_tumor_cell_number_from_volume(self, volume_array):
+        """
+        Given a numpy array with elements representing tumor volume [cm^3], 
+        converts each element to tumor cell number assuming spherical tumor  
+        
+        Params::
+            `volume_array`: numpy array
+        """
 
         cell_number_array = volume_array * c.TUMOR_DENSITY
 
         return cell_number_array
 
     def get_volume_from_tumor_cell_number(self, cell_number_array):
+        """
+        Given a numpy array with elements representing tumor cell number, 
+        converts each element to tumor volume [cm^3] assuming spherical tumor  
+        
+        Params::
+            `cell_number_array`: numpy array
+        """
 
         volume_array = cell_number_array / c.TUMOR_DENSITY
 
         return volume_array
 
     def get_diameter_from_tumor_cell_number(self, cell_number_array):
+        """
+        Given a numpy array with elements representing tumor cell number, 
+        converts each element to tumor diameter [cm] assuming spherical tumor  
+        
+        Params::
+            `cell_number_array`: numpy array
+        """
 
         volume_array = self.get_volume_from_tumor_cell_number(
             cell_number_array)
@@ -279,6 +315,22 @@ class PropertyManager ():
         return diameter_array
 
     def get_param_object_for_no_treatment(self, stage="1"):
+        """
+        Returns a `Parameters` object for no treatment result reproduction 
+        (given a string representing the AJCC stage of the Monte Carlo 
+        population to be simulated)
+
+        Params::
+            `stage`: a string
+
+        Requires::
+            `stage` can only take values of "1", "2", "3A", "3B", or "4"
+
+        Raises::
+            Assertion error if `stage` is not one of "1", "2", "3A", "3B", "4"
+        """
+
+        assert(stage in c.TABLE2.keys())
 
         params = Parameters()
 
@@ -305,6 +357,9 @@ class PropertyManager ():
         return params
 
     def get_param_object_for_radiation(self):
+        """
+        Returns a `Parameters` object to reproduce radiotherapy only results
+        """
 
         params = Parameters()
 
@@ -328,12 +383,27 @@ class PropertyManager ():
         return params
 
     def get_initial_diameters(self, stage_1=1, stage_2=0, stage_3A=0, stage_3B=0, stage_4=0):
+        """
+        Returns a python list where each entry is a diameter [cm] value sampled 
+        from a population with a mixed proportion of a patients in each AJCC 
+        stage.
 
-        try:
-            assert(stage_1 + stage_2 + stage_3A + stage_3B + stage_4 == 1)
-        except Exception:
-            logging.error("Sum of population proportions do not equal 1!")
+        Params::
+            `stage_1`: scalar, representing the fraction of stage I patients in the simulated population 
+            `stage_1`: scalar, representing the fraction of stage I patients in the simulated population
+            `stage_1`: scalar, representing the fraction of stage I patients in the simulated population
+            `stage_1`: scalar, representing the fraction of stage I patients in the simulated population
+            `stage_1`: scalar, representing the fraction of stage I patients in the simulated population
 
+        Requires::
+            `stage_1 + stage_2 + stage_3A + stage_3B + stage_4 == 1` 
+
+        Raises::
+            `stage_1 + stage_2 + stage_3A + stage_3B + stage_4 != 1`
+        """
+        
+        assert(stage_1 + stage_2 + stage_3A + stage_3B + stage_4 == 1)
+        
         stage_1_num = int(np.ceil(self.patient_size * stage_1))
         stage_2_num = int(np.ceil(self.patient_size * stage_2))
         stage_3A_num = int(np.ceil(self.patient_size * stage_3A))
@@ -372,6 +442,7 @@ class PropertyManager ():
 
     def get_radiation_days(self, num_steps):
         """
+        returns a 2 dimensional num
         """
         treatment_delay = np.random.uniform(low=c.DIAGNOSIS_DELAY_RANGE[0],
                                             high=c.DIAGNOSIS_DELAY_RANGE[1],
