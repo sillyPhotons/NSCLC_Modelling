@@ -40,7 +40,7 @@ class PropertyManager ():
         self.patient_size = patient_size
         self.count = 0  # utility variable
 
-    def sample_normal_param(self, mean, std, retval=1, lowerbound=None,upperbound=None):
+    def sample_normal_param(self, mean, std, retval=1, lowerbound=None, upperbound=None):
         """
         Returns a numpy array or a python list of samples from a univariate 
         normal given `mean` and standard deviation (`std`) of the distribution.
@@ -53,11 +53,11 @@ class PropertyManager ():
 
         Params::
             `mean`: mean of the normal distribution, scalar
-            
+
             `std`: standard deviation of the normal distribution
-            
+
             `retval`: integer number of values to return
-            
+
             `upperbound`, `lowerbound`: upper and lower bound of returned values
 
         Requires::
@@ -110,26 +110,20 @@ class PropertyManager ():
                     i += 1
             return data
 
-    def sample_lognormal_param(self, mean, std, retval=1, lowerbound=None,\
-         upperbound=None):
+    def sample_lognormal_param(self, mean, std, retval=1, lowerbound=None,
+                               upperbound=None):
         """
-        Returns a numpy array or a python list of samples from a univariate 
+        Returns a numpy array of samples from a univariate 
         log normal given `mean` and standard deviation (`std`) of the 
         underlying distribution.
 
-        If the no upper and/or lower bound values are supplied, then a numpy 
-        array with number of elements equal to `retval` is returned`.
-
-        If either upper or lower bound value is supplied, then a python list is 
-        returned
-
         Params::
             `mean`: mean of the underlying normal distribution, scalar
-            
+
             `std`: standard deviation of the underlying normal distribution
-            
+
             `retval`: integer number of values to return
-            
+
             `upperbound`, `lowerbound`: upper and lower bound of returned values
 
         Requires::
@@ -155,7 +149,7 @@ class PropertyManager ():
                     data.append(point[0])
                     i += 1
 
-            return data
+            return np.array(data)
 
         elif (upperbound != None and lowerbound == None):
 
@@ -167,19 +161,18 @@ class PropertyManager ():
                 if (point[0] < upperbound):
                     data.append(point[0])
                     i += 1
-            return data
+            return np.array(data)
 
         else:
 
             assert(upperbound > lowerbound)
+            lowerbound = (np.log(lowerbound) - mean) / std
+            upperbound = (np.log(upperbound) - mean) / std
 
-            data = list()
-            i = 0
-            while i < retval:
-                point = np.random.lognormal(mean, std, 1)
-                if (lowerbound < point[0] < upperbound):
-                    data.append(point[0])
-                    i += 1
+            norm_rvs = truncnorm.rvs(lowerbound, upperbound, size=retval)
+
+            data = np.exp((norm_rvs * std) + mean)
+
             return data
 
     def sample_correlated_params(self, param1, param2, corr, retval=1):
@@ -191,13 +184,13 @@ class PropertyManager ():
 
         Params::
             `param1`: numpy array with 2 elements. `param1[0]` is the mean of the parameter, `param1[1]` is the standard deviation, `param1[2]` is the lower bound this parameter, and `param1[3]` is the upper bound of this parameter
-            
+
             `param2`: numpy array with 2 elements. `param2[0]` is the mean of the parameter, and `param2[1]` is the standard deviation, `param2[2]` is the lower bound this parameter, and `param2[3]` is the upper bound of this parameter
-            
+
             `corr`: linear correlation coefficient of `param1` and `param2`. corr = (covariance of param1 and param2)/((sigma of param1)*(sigma of param 2))
-            
+
             `retval`: number of ordered pairs to return 
-        
+
         Requires::
             The upper and lower bound values are not `None`. Use `np.inf` instead
 
@@ -241,7 +234,7 @@ class PropertyManager ():
         """
         Given a numpy array with elements representing tumor diameter [cm], 
         converts each element to tumor volume [cm^3] assuming spherical tumor  
-        
+
         Params::
             `diameter_array`: numpy array
         """
@@ -252,7 +245,7 @@ class PropertyManager ():
         """
         Given a numpy array with elements representing tumor volume [cm^3], 
         converts each element to tumor diameter [cm] assuming spherical tumor  
-        
+
         Params::
             `volume_array`: numpy array
         """
@@ -263,7 +256,7 @@ class PropertyManager ():
         """
         Given a numpy array with elements representing tumor diameter [cm], 
         converts each element to tumor cell number assuming spherical tumor  
-        
+
         Params::
             `diameter_array`: numpy array
         """
@@ -277,7 +270,7 @@ class PropertyManager ():
         """
         Given a numpy array with elements representing tumor volume [cm^3], 
         converts each element to tumor cell number assuming spherical tumor  
-        
+
         Params::
             `volume_array`: numpy array
         """
@@ -290,7 +283,7 @@ class PropertyManager ():
         """
         Given a numpy array with elements representing tumor cell number, 
         converts each element to tumor volume [cm^3] assuming spherical tumor  
-        
+
         Params::
             `cell_number_array`: numpy array
         """
@@ -303,7 +296,7 @@ class PropertyManager ():
         """
         Given a numpy array with elements representing tumor cell number, 
         converts each element to tumor diameter [cm] assuming spherical tumor  
-        
+
         Params::
             `cell_number_array`: numpy array
         """
@@ -401,9 +394,9 @@ class PropertyManager ():
         Raises::
             `stage_1 + stage_2 + stage_3A + stage_3B + stage_4 != 1`
         """
-        
+
         assert(stage_1 + stage_2 + stage_3A + stage_3B + stage_4 == 1)
-        
+
         stage_1_num = int(np.ceil(self.patient_size * stage_1))
         stage_2_num = int(np.ceil(self.patient_size * stage_2))
         stage_3A_num = int(np.ceil(self.patient_size * stage_3A))
@@ -442,7 +435,27 @@ class PropertyManager ():
 
     def get_radiation_days(self, num_steps):
         """
-        returns a 2 dimensional num
+        Returns a 2 dimensional numpy array, with dimensions equal to the 
+        number of Monte Carlo patients times the number of time steps (Each 
+        row represents one patient, each column represents one time step). Each
+        element of the array is either 1 or 0, with 1 representing that 
+        radiation is applied at that time step, and  0 representing no 
+        radiation. The dose fraction for each day is given in `Constants.py` as 
+        `RAD_DOSE`, and the total dose is given as `TOTAL_DOSE`.
+
+        A delay is uniformly sampled between a closed interval given by the 
+        python list `DIAGNOSIS_DELAY_RANGE` in `Constants.py`. The radiation is 
+        then applied for 5 days a week at `RAD_DOSE` fraction per day, to a 
+        total of `TOTAL_DOSE`.   
+
+        Params::
+            `num_steps`: number of time steps. The time step has the basic unit of [days]
+
+        Requires::
+            `num_steps` is sufficently large so that total dose of `TOTAL_DOSE` [Gy] is achieved
+
+        Raises::
+            Assertion error if `TOTAL_DOSE` requirement is not met
         """
         treatment_delay = np.random.uniform(low=c.DIAGNOSIS_DELAY_RANGE[0],
                                             high=c.DIAGNOSIS_DELAY_RANGE[1],
@@ -454,7 +467,6 @@ class PropertyManager ():
             one_day = int(1/c.RESOLUTION)
             steps_delayed = int(treatment_delay[i]/c.RESOLUTION)
 
-            # 30 fractions of 2 Gy dose for a total of 60 Gy
             total_dose = 0
             last_step = steps_delayed
 
@@ -467,88 +479,6 @@ class PropertyManager ():
                 if (treatment_days[i][num] == 1):
                     total_dose += c.RAD_DOSE/one_day
 
-            try:
-                assert(total_dose == c.TOTAL_DOSE)
-            except Exception:
-                logging.error("Expected total dose of {} Gy, got {} Gy instead.".format(
-                    c.TOTAL_DOSE, total_dose))
+            assert(total_dose == c.TOTAL_DOSE)
 
         return treatment_days
-
-
-def generate_csv(csv_path, params, pop_manager):
-    """
-    Given the location of a csv file, a patient population is generated via 
-    random sampling, and the generated csv file has the form that each row 
-    represents a patient, each the columns have values representing tumor 
-    diameter in cm, growth rate, and carrying capacity in cm
-
-    csv_path: string specifying the path to save the csv file generate, 
-              including the name of the csv file
-    params: Parameters object containing the following Parameter objects:
-        rho_mu = p['rho_mu']
-        rho_sigma = p['rho_sigma']
-        K = p['K']
-        V_mu = p['V_mu']
-        V_sigma = p['V_sigma']
-    pop_manager: PropertyManager object
-    """
-
-    p = params.valuesdict()
-    rho_mu = p['rho_mu']
-    rho_sigma = p['rho_sigma']
-    K = p['K']
-    V_mu = p['V_mu']
-    V_sigma = p['V_sigma']
-
-    with open(csv_path, mode='w') as f:
-
-        writer = csv.writer(f, delimiter=',')
-
-        tumor_diameter = pop_manager.sample_lognormal_param(
-            mean=V_mu, std=V_sigma, retval=pop_manager.patient_size, lowerbound=0.3, upperbound=5)
-
-        growth_rate = pop_manager.sample_normal_param(
-            mean=rho_mu, std=rho_sigma, retval=pop_manager.patient_size, lowerbound=0, upperbound=None)
-
-        for num in range(pop_manager.patient_size):
-
-            writer.writerow(
-                [tumor_diameter[num], growth_rate[num], K])
-
-    return csv_path
-
-
-# if __name__ == "__main__":
-
-#     from Constants import TABLE3, TABLE2
-#     from scipy.stats import truncnorm
-#     plt.rc("text", usetex=True)
-#     plt.rcParams['font.family'] = 'serif'
-
-#     pop_man = PropertyManager(1)
-
-#     print(pop_man.get_radiation_days(10000))
-
-    # size = pop_man.get_patient_size()
-
-    # for stage in REFER_TUMOR_SIZE_DIST.keys():
-
-    #     mu = np.log(TABLE2[stage][1])
-    #     sigma = np.sqrt(2*(np.abs(np.log(TABLE2[stage][0]) - mu)))
-    #     lb = REFER_TUMOR_SIZE_DIST[stage][2]
-    #     ub = REFER_TUMOR_SIZE_DIST[stage][3]
-
-    #     lowerbound = (np.log(lb) - mu) / sigma
-    #     upperbound = (np.log(ub) - mu) / sigma
-
-    #     norm_rvs = truncnorm.rvs(lowerbound, upperbound, size=size)
-    #     initial_diameter = list(np.exp((norm_rvs * sigma) + mu))
-    #     plt.hist(initial_diameter, int(np.ceil(ub - lb)),
-    #              density=True, range=(0, ub), alpha=0.7, rwidth=0.95, label="Mean = {}\nMedian = {}".format(TABLE2[stage][0], TABLE2[stage][1]))
-    #     plt.title("Stage {} Volume Distribution".format(stage))
-    #     plt.xlabel("Tumor Diameter [cm]")
-    #     plt.ylabel("Frequency")
-    #     plt.legend()
-    #     plt.savefig("stage{}.pdf".format(stage))
-    #     plt.close()

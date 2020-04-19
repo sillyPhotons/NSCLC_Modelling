@@ -32,7 +32,7 @@ if __name__ == '__main__':
     ray.init()
 
     sampling_range = [0, 60]
-    monte_carlo_patient_size = 1000
+    monte_carlo_patient_size = 10000
     pop_manager = gp.PropertyManager(monte_carlo_patient_size)
     res_manager = ResultManager()
 

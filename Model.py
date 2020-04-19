@@ -37,10 +37,11 @@ def discrete_time_tumor_volume_GENG(V0, rho, K, alpha=0, beta=0, dose_step=0,\
 
     Requires::
         `V0 != 0` 
+        `K != 0`
         All arguments are scalars
 
     Raises::
-        Assertion error if `previous_volume == 0`
+        Assertion error if `V0 == 0`
     """
 
     assert(V0 != 0)
@@ -74,10 +75,11 @@ def rk4_tumor_volume(V0, rho, K, alpha=0, beta=0, dose_step=False, noise=0):
 
     Requires::
         `V0 != 0` 
+        `K != 0`
         All arguments are scalars
 
     Raises::
-        Assertion error if `previous_volume == 0`
+        Assertion error if `V0 == 0`
     """
 
     assert(V0 != 0)
@@ -128,10 +130,11 @@ def euler_tumor_volume(V0, rho, K, alpha=0, beta=0, dose_step=False, noise=0):
         
     Requires::
         `V0 != 0` 
+        `K != 0`
         All arguments are scalars
 
     Raises::
-        Assertion error if `previous_volume == 0`
+        Assertion error if `V0 == 0`
     """
 
     assert(V0 != 0)

@@ -1,8 +1,7 @@
 """
-Implementations of functions that predict
-    - Volume Doubling time
-    - KMSC curve
-that involves the use of some sort of concurrency
+Author: Ruiheng Su 2020
+
+Implementation of Geng's no-treatment model, or radiation only model. 
 """
 
 import ray
@@ -10,9 +9,7 @@ import time
 import logging
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.stats import truncnorm
 from scipy.integrate import odeint
-from lmfit import minimize, Parameters
 
 from ReadData import read_file
 import Constants as c
@@ -22,11 +19,22 @@ import Model as m
 @ray.remote
 def sim_patient_death_time(num_steps, initial_volume, death_volume, func_pointer, *func_args, **func_kwargs):
     """
-    This function is decorated with `@ray.remote`, which means that it is a funciton that may be called multiple times in parallel. Given the parameters, returns a single integer equal to number of time steps taken before the patient tumor volume exceeds `death_volume`
-    `num_steps`: number of `RESOLUTION` steps to take
-    `initial_volume`: the initial tumor volume
-    `death_volume`: volume of tumor at which point the patient is considered dead
-    `func_pointer`: discrete time model of the model taking `*func_args` and `**func_kwargs` as parameters
+    Returns a scalar value representing the number of time steps before the 
+    patient dies if he or she is not given any treatment. If the patient 
+    recovers, or do not die within the simulationed time steps, then `None` is 
+    returned. 
+
+    This function is decorated with `@ray.remote`, which means that it is a 
+    funciton that may be called multiple times in parallel.
+
+    Params::
+        `num_steps`: number of time steps to take
+
+        `initial_volume`: the initial tumor volume
+
+        `death_volume`: volume of tumor at which point the patient is considered dead
+
+        `func_pointer`: discrete time model of the model taking `*func_args` and `**func_kwargs` as parameters
     """
 
     cancer_volume = np.zeros(num_steps)
@@ -59,7 +67,22 @@ def sim_patient_death_time(num_steps, initial_volume, death_volume, func_pointer
 @ray.remote
 def sim_death_time_with_radiation(num_steps, initial_volume, death_volume, treatment_days, func_pointer, *func_args, **func_kwargs):
     """
+    Returns a scalar value representing the number of time steps before the 
+    patient dies if he or she recieves a single radiotherapy treatement. If the 
+    patient recovers, or do not die within the simulationed time steps, then 
+    `None` is returned.
 
+    This function is decorated with `@ray.remote`, which means that it is a 
+    funciton that may be called multiple times in parallel.
+
+    Params::
+        `num_steps`: number of time steps to take
+
+        `initial_volume`: the initial tumor volume
+
+        `death_volume`: volume of tumor at which point the patient is considered dead
+
+        `func_pointer`: discrete time model of the model taking `*func_args` and `**func_kwargs` as parameters
     """
 
     cancer_volume = np.zeros(num_steps)
@@ -117,23 +140,12 @@ def KMSC_No_Treatment(params, x, pop_manager, func_pointer):
 
     patient_size = pop_manager.get_patient_size()
     num_steps = int(x.size + x[0]/c.RESOLUTION)
-
     patients_alive = [patient_size] * num_steps
 
-    ######################################################################
-    lowerbound = (np.log(params['V_mu'].min) -
-                  V_mu) / V_sigma
-    upperbound = (np.log(params['V_mu'].max) -
-                  V_mu) / V_sigma
+    initial_diameter = pop_manager.sample_lognormal_param(
+        V_mu, V_sigma, retval=patient_size, lowerbound=params['V_mu'].min, upperbound=params['V_mu'].max)
 
-    norm_rvs = truncnorm.rvs(lowerbound, upperbound, size=patient_size)
-
-    initial_diameter = list(np.exp(
-        (norm_rvs * V_sigma) + V_mu))
-    ######################################################################
-
-    initial_volume = pop_manager.get_volume_from_diameter(
-        np.array(initial_diameter))
+    initial_volume = pop_manager.get_volume_from_diameter(initial_diameter)
 
     growth_rates = pop_manager.sample_normal_param(
         mean=rho_mu, std=rho_sigma, retval=patient_size, lowerbound=0, upperbound=None)
@@ -219,20 +231,10 @@ def predict_VDT(params, x, pop_manager, func_pointer):
 
     patient_size = pop_manager.get_patient_size()
 
-    ######################################################################
-    lowerbound = (np.log(params['V_mu'].min) -
-                  V_mu) / V_sigma
-    upperbound = (np.log(params['V_mu'].max) -
-                  V_mu) / V_sigma
+    initial_diameter = pop_manager.sample_lognormal_param(
+        V_mu, V_sigma, retval=patient_size, lowerbound=params['V_mu'].min, upperbound=params['V_mu'].max)
 
-    norm_rvs = truncnorm.rvs(lowerbound, upperbound, size=patient_size)
-
-    initial_diameter = list(np.exp(
-        (norm_rvs * V_sigma) + V_mu))
-    ######################################################################
-
-    initial_volume = pop_manager.get_volume_from_diameter(
-        np.array(initial_diameter))
+    initial_volume = pop_manager.get_volume_from_diameter(initial_diameter)
 
     growth_rates = pop_manager.sample_normal_param(
         mean=rho_mu, std=rho_sigma, retval=patient_size, lowerbound=0, upperbound=None)
@@ -322,8 +324,6 @@ def KMSC_With_Radiotherapy(params, x, pop_manager, func_pointer):
 
     for times in death_times:
         if times is not None:
-            # patients_alive = [(patients_alive[k] - 1) if k >=
-            #                   times else patients_alive[k] for k in range(num_steps)]
             patients_alive = [(patients_alive[k] - 1) if x[k] >=
                               times * c.RESOLUTION else patients_alive[k] for k in range(num_steps)]
     patients_alive = np.array(patients_alive)

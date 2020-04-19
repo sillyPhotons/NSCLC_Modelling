@@ -1,5 +1,5 @@
 """
-Author: Ruiheng Su
+Author: Ruiheng Su 2020
 
 File containing the defintion of two ulility classes to deal with
 results of simulations
