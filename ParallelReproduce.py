@@ -31,7 +31,7 @@ if __name__ == '__main__':
     # initialize ray module for concurrency
     ray.init()
 
-    sampling_range = [0, 60]
+    sampling_range = [0, 59]
     monte_carlo_patient_size = 10000
     pop_manager = gp.PropertyManager(monte_carlo_patient_size)
     res_manager = ResultManager()
