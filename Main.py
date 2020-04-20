@@ -99,7 +99,7 @@ for stage in Constants.TABLE3.keys():
     # Run minimization
     result = run(cf.cost_function, params,
                  fcn_args=(x, data, pop_manager,
-                           m.discrete_time_tumor_volume_GENG))
+                           m.tumor_volume_GENG))
 
     # pop_manager2 = gp.PropertyManager(1432)
     # px, py = predict_no_treatment_volume(

@@ -27,7 +27,7 @@ NATURAL_HISTORY_PATIENT_SIZE = {'1': 1432,
                                 "3B": 7248,
                                 "4": 12840}
 
-# Gompertz carrying capacity(volume)
+# Gompertz carrying capacity given as diameter (30 cm)
 K = 30
 
 # Gompertz growth rate. (mean, sigma, lower bound, upper bound)
@@ -38,22 +38,31 @@ RHO = [7*10**-5, 7.23*10**-3, 0, np.inf]
 according tp ref # 27, the radiation therapy only patient group consisted of 6% 
 stage II, 44% stage 3A, and 50% stage 3B
 """
-RADIATION_ONLY_PATIENT_PERCENTAGE = {'2': 6/100.,
+RADIATION_ONLY_PATIENT_PERCENTAGE = {'1': 0,
+                                     '2': 6/100.,
                                      '3A': 44/100.,
-                                     '3B': 50/100.}
+                                     '3B': 50/100.,
+                                     "4": 0}
+
+RADIATION_ONLY_PATIENT_PERCENTAGE = {'1': 0,
+                                     "2": 0,
+                                     "3A": 0,
+                                     "3B": 0,
+                                     "4": 100/100}
+
 
 """
 The delay time, which is the time between diagnosis and the start of the
 treatment, was uniformly sampled from 2 - 3 weeks
 """
-DIAGNOSIS_DELAY_RANGE = [0,0]
+DIAGNOSIS_DELAY_RANGE = [14, 21]
 
 # Linear correlation coefficent between tumor growth rate and radiosensitivity
 GR_RS_CORRELATION = 0.87
 # GR_RS_CORRELATION = 0
 
 # Number of months passed per time step
-RESOLUTION = 1
+RESOLUTION = 0.5
 
 # 1.48% survival reduction
 SURVIVAL_REDUCTION = 0

@@ -100,8 +100,8 @@ class ResultManager():
                     writer.writerow([r.x[num], r.y[num]])
 
             r.plotfunc(r.x, r.y, **r.plotargs)
-            plt.xlabel("Months")
-            plt.ylabel("Proportion of Patients Alive")
+            plt.xlabel(r.xdes)
+            plt.ylabel(r.ydes)
         plt.legend()
         plt.savefig(path + "/plot.pdf")
         plt.close()
@@ -137,8 +137,8 @@ class ResultManager():
                     writer.writerow([r.x[num], r.y[num]])
 
             r.plotfunc(r.x, r.y, **r.plotargs)
-            plt.xlabel("Months")
-            plt.ylabel("Proportion of Patients Alive")
+            plt.xlabel(r.xdes)
+            plt.ylabel(r.ydes)
         plt.legend()
         plt.savefig(path + "/plot.pdf")
         plt.close()

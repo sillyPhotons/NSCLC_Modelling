@@ -13,8 +13,46 @@ import matplotlib.pyplot as plt
 from scipy.integrate import odeint
 from lmfit import minimize, Parameters
 
+def tumor_volume_GENG_Logistic(V0, rho, K, alpha=0, beta=0, dose_step=0, noise=0):
+    """
+    Modification to the iscrete time formulation of tumor volume function as 
+    seen in: https://www.nature.com/articles/s41598-018-30761-7. Uses the 
+    logistic model for tumor growth instead of gompertz model. A different 
+    optimized value for rho is required for this model.
 
-def discrete_time_tumor_volume_GENG(V0, rho, K, alpha=0, beta=0, dose_step=0,\
+    Returns tumor volume one `c.RESOLUTION` time step ahead.
+    
+    Params::
+        `V0`: scalar value representing previous tumor volume
+
+        `rho`: scalar value representing gompertz growth rate 
+
+        `alpha`: radiosensitivity parameter [Gy^-1] 
+
+        `beta`:
+
+        `dose_step`: 0, or 1, represents whether this time step involves the application of radiation
+
+        `noise`: noise to be added
+
+    Requires::
+        `V0 != 0` 
+        `K != 0`
+        All arguments are scalars
+
+    Raises::
+        Assertion error if `V0 == 0`
+    """
+
+    assert(V0 != 0)
+
+    dose = 0
+    if dose_step:
+        dose = c.RAD_DOSE*c.RESOLUTION
+
+    return V0 * np.exp(c.RESOLUTION * rho * V0 *(1 - V0/K)\
+         - (alpha*dose + beta*dose**2)) + noise
+def tumor_volume_GENG(V0, rho, K, alpha=0, beta=0, dose_step=0,\
      noise=0):
     """
     Discrete time formulation of tumor volume function as seen in: 
@@ -50,8 +88,10 @@ def discrete_time_tumor_volume_GENG(V0, rho, K, alpha=0, beta=0, dose_step=0,\
     if dose_step:
         dose = c.RAD_DOSE*c.RESOLUTION
 
-    return V0 * np.exp(rho * c.RESOLUTION * np.log(K/V0)\
+    return V0 * np.exp(c.RESOLUTION * rho * np.log(K/V0)\
          - (alpha*dose + beta*dose**2)) + noise
+
+         
 
 
 def rk4_tumor_volume(V0, rho, K, alpha=0, beta=0, dose_step=False, noise=0):

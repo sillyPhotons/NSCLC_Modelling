@@ -110,6 +110,100 @@ def sim_death_time_with_radiation(num_steps, initial_volume, death_volume, treat
     else:
         return None
 
+@ray.remote
+def sim_patient_radiation_response(num_steps, initial_volume, treatment_days, func_pointer, *func_args, **func_kwargs):
+    """
+    Returns an array representing the patient tumor volume at each time step. 
+
+    This function is decorated with `@ray.remote`, which means that it is a 
+    funciton that may be called multiple times in parallel.
+
+    Params::
+        `num_steps`: number of time steps to take
+
+        `initial_volume`: the initial tumor volume
+
+        `func_pointer`: discrete time model of the model taking `*func_args` and `**func_kwargs` as parameters
+    """
+
+    cancer_volume = np.zeros(num_steps)
+    cancer_volume[0] = initial_volume
+    
+    for i in range(1, num_steps):
+
+        cancer_volume[i] = func_pointer(
+            cancer_volume[i - 1], *func_args, **func_kwargs, dose_step=treatment_days[i-1])
+
+    return cancer_volume
+
+def Radiation_Treatment_Response(params, x, pop_manager, func_pointer):
+
+    start = time.time()  # start timing
+
+    p = params.valuesdict()
+    rho_mu = p['rho_mu']
+    rho_sigma = p['rho_sigma']
+    K = p['K']
+    alpha_mu = p['alpha_mu']
+    alpha_sigma = p['alpha_sigma']
+
+    patient_size = pop_manager.get_patient_size()
+    num_steps = int(x.size + x[0]/c.RESOLUTION)
+
+    initial_diameters = pop_manager.get_initial_diameters(
+        stage_1=c.RADIATION_ONLY_PATIENT_PERCENTAGE["1"],
+        stage_2=c.RADIATION_ONLY_PATIENT_PERCENTAGE["2"],
+        stage_3A=c.RADIATION_ONLY_PATIENT_PERCENTAGE["3A"],
+        stage_3B=c.RADIATION_ONLY_PATIENT_PERCENTAGE["3B"],
+        stage_4=c.RADIATION_ONLY_PATIENT_PERCENTAGE["4"])
+
+    initial_volume =\
+        pop_manager.get_volume_from_diameter(np.array(initial_diameters))
+
+    alpha = np.array([alpha_mu, alpha_sigma, c.RAD_ALPHA[2], c.RAD_ALPHA[3]])
+    rho = np.array(
+        [rho_mu, rho_sigma, params['rho_mu'].min, params['rho_mu'].max])
+
+    alpha_and_rho =\
+        pop_manager.sample_correlated_params(alpha,
+                                             rho,
+                                             c.GR_RS_CORRELATION,
+                                             retval=patient_size)
+
+    treatment_days = pop_manager.get_radiation_days(num_steps)
+    
+    id_list = list()
+    for num in range(patient_size):
+
+        obj_id =\
+            sim_patient_radiation_response.remote(num_steps,
+                                                 initial_volume[num],
+                                                 treatment_days[num],
+                                                 func_pointer,
+                                                 alpha_and_rho[num, 1],
+                                                 K,
+                                                 alpha=alpha_and_rho[num, 0],
+                                                 beta=alpha_and_rho[num, 0]/10.
+                                                 )
+
+        id_list.append(obj_id)
+
+    logging.info("Patient treatment response simulation complete.")
+    
+    tumor_volume = list()
+    for obj_id in id_list:
+        patient_array = ray.get(obj_id)
+        patient_array = patient_array[int(
+        x[0]/c.RESOLUTION):int(x[-1]/c.RESOLUTION)+1]
+        tumor_volume.append(patient_array)
+
+    end = time.time()
+    runtime = end - start
+
+    logging.info(
+        "\U0001F637 Minimization Iteration completed in {} seconds.".format(runtime))
+
+    return x/31., tumor_volume
 
 def KMSC_No_Treatment(params, x, pop_manager, func_pointer):
     """

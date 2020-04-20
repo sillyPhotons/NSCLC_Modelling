@@ -4,7 +4,6 @@ import unittest
 import Model
 import Result
 import ReadData
-# import CostFunction
 import GetProperties
 import ParallelPredict
 
@@ -13,19 +12,24 @@ class Test_Model (unittest.TestCase):
 
     def test_discrete_time_models(self):
 
-        retval = Model.discrete_time_tumor_volume_GENG(1, 1, 1, 0, 0, 0, 0)
+        retval = Model.tumor_volume_GENG(1, 1, 1, 0, 0, 0, 0)
         self.assertEqual(retval, 1)
         retval = Model.rk4_tumor_volume(1, 1, 1, 0, 0, 0, 0)
         self.assertEqual(retval, 1)
         ret_val = Model.euler_tumor_volume(1, 1, 1, 0, 0, 0, 0)
         self.assertEqual(ret_val, 1)
+        ret_val = Model.tumor_volume_GENG_Logistic(1, 1, 1, 0, 0, 0, 0)
+        self.assertEqual(ret_val, 1)
+
 
         self.assertRaises(AssertionError,
-                          Model.discrete_time_tumor_volume_GENG, 0, 1, 1, 0, 0, 0, 0)
+                          Model.tumor_volume_GENG, 0, 1, 1, 0, 0, 0, 0)
         self.assertRaises(AssertionError,
                           Model.rk4_tumor_volume, 0, 1, 1, 0, 0, 0, 0)
         self.assertRaises(AssertionError,
                           Model.euler_tumor_volume, 0, 1, 1, 0, 0, 0, 0)
+        self.assertRaises(AssertionError,
+                          Model.tumor_volume_GENG_Logistic, 0, 1, 1, 0, 0, 0, 0)
 
     def test_volume_doubling_time(self):
 
@@ -327,7 +331,7 @@ class Test_ParallelPredict (unittest.TestCase):
         import Model
         import ray
 
-        func_pointer = Model.discrete_time_tumor_volume_GENG
+        func_pointer = Model.tumor_volume_GENG
         death_time = ParallelPredict.sim_patient_death_time.remote(100, 10, 10, func_pointer, 0,10)
         
         self.assertEqual(ray.get(death_time), None)
