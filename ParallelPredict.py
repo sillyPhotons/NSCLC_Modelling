@@ -144,7 +144,7 @@ def Radiation_Response(V0, rho, K, alpha, beta, delay_days, x, pop_manager, func
     start = time.time()
     num_steps = int(x.size + x[0]/c.RESOLUTION)
 
-    treatment_delay = [delay_days] * pop_manager.patient_size
+    treatment_delay = np.array(delay_days)
     treatment_days = pop_manager.get_radiation_days(treatment_delay, num_steps)
 
     obj_id =\

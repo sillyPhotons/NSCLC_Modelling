@@ -342,4 +342,4 @@ class Test_ParallelPredict (unittest.TestCase):
         self.assertEqual(ray.get(death_time), 1)
 
 if __name__ == '__main__':
-    unittest.main(verbosity=1)
+    unittest.main(verbosity=2)

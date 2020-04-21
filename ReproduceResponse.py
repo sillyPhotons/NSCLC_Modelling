@@ -33,7 +33,7 @@ if __name__ == '__main__':
     # initialize ray module for concurrency
     ray.init()
 
-    sampling_range = [0, 7]
+    sampling_range = [0, 13]
     monte_carlo_patient_size = 1
     pop_manager = gp.PropertyManager(monte_carlo_patient_size)
     res_manager = ResultManager()
@@ -47,7 +47,7 @@ if __name__ == '__main__':
     delay_days = [14]
     x = np.arange(
         sampling_range[0]*31, sampling_range[1]*31 + c.RESOLUTION, c.RESOLUTION)
-    func = m.rk4_tumor_volume
+    func = m.tumor_volume_GENG
     #####
 
     x, tumor_volume = pp.Radiation_Response(V0,

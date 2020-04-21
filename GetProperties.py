@@ -15,7 +15,6 @@ from scipy.optimize import curve_fit
 
 import Constants as c
 
-
 class PropertyManager ():
     """
     Each `PropertyManager` object is associated with a integer `patient_size`.
@@ -464,28 +463,29 @@ class PropertyManager ():
         Raises::
             Assertion error if `TOTAL_DOSE` requirement is not met
         """
-        treatment_delay = np.random.uniform(low=c.DIAGNOSIS_DELAY_RANGE[0],
-                                            high=c.DIAGNOSIS_DELAY_RANGE[1],
-                                            size=self.patient_size)
 
         treatment_days = np.zeros([self.patient_size, num_steps])
 
+        one_day = int(1/c.RESOLUTION)
+
+        days_with_rad = c.SCHEME[0] * one_day
+        rest = c.SCHEME[1] * one_day
+
+        fraction_per_step = c.RAD_DOSE/one_day
         for i in range(self.patient_size):
-            one_day = int(1/c.RESOLUTION)
-            steps_delayed = int(treatment_delay[i]/c.RESOLUTION)
+            steps_delayed = int(np.round(treatment_delay[i]/c.RESOLUTION))
 
             total_dose = 0
             last_step = steps_delayed
 
-            for num in range(6):
-                five_days = last_step + 5*one_day
-                treatment_days[i][last_step:five_days] = 1
-                last_step = five_days + 2*one_day
+            while total_dose < c.TOTAL_DOSE:
+                rad_days = last_step + days_with_rad
+                treatment_days[i][last_step:rad_days] = 1
+                total_dose += (fraction_per_step) * (rad_days - last_step)
+                last_step = rad_days + rest
 
-            for num in range(num_steps):
-                if (treatment_days[i][num] == 1):
-                    total_dose += c.RAD_DOSE/one_day
+            entries = np.count_nonzero(treatment_days[i])
 
-            assert(total_dose == c.TOTAL_DOSE)
+            assert(entries*fraction_per_step == c.TOTAL_DOSE)
 
         return treatment_days
