@@ -433,7 +433,14 @@ class PropertyManager ():
 
         return ret_array
 
-    def get_radiation_days(self, num_steps):
+    def get_treatment_delay(self, low=c.DIAGNOSIS_DELAY_RANGE[0], high=c.DIAGNOSIS_DELAY_RANGE[1]):
+        """
+        """
+        return np.random.uniform(low=low,
+                                 high=high,
+                                 size=self.patient_size)
+
+    def get_radiation_days(self, treatment_delay, num_steps):
         """
         Returns a 2 dimensional numpy array, with dimensions equal to the 
         number of Monte Carlo patients times the number of time steps (Each 

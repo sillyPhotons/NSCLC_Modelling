@@ -110,6 +110,7 @@ def sim_death_time_with_radiation(num_steps, initial_volume, death_volume, treat
     else:
         return None
 
+
 @ray.remote
 def sim_patient_radiation_response(num_steps, initial_volume, treatment_days, func_pointer, *func_args, **func_kwargs):
     """
@@ -128,7 +129,7 @@ def sim_patient_radiation_response(num_steps, initial_volume, treatment_days, fu
 
     cancer_volume = np.zeros(num_steps)
     cancer_volume[0] = initial_volume
-    
+
     for i in range(1, num_steps):
 
         cancer_volume[i] = func_pointer(
@@ -136,8 +137,41 @@ def sim_patient_radiation_response(num_steps, initial_volume, treatment_days, fu
 
     return cancer_volume
 
-def Radiation_Treatment_Response(params, x, pop_manager, func_pointer):
 
+def Radiation_Response(V0, rho, K, alpha, beta, delay_days, x, pop_manager, func_pointer):
+    """
+    """
+    start = time.time()
+    num_steps = int(x.size + x[0]/c.RESOLUTION)
+
+    treatment_delay = [delay_days] * pop_manager.patient_size
+    treatment_days = pop_manager.get_radiation_days(treatment_delay, num_steps)
+
+    obj_id =\
+        sim_patient_radiation_response.remote(num_steps,
+                                              V0,
+                                              treatment_days[0],
+                                              func_pointer,
+                                              rho,
+                                              K,
+                                              alpha=alpha,
+                                              beta=beta
+                                              )
+
+    patient_array = ray.get(obj_id)
+    patient_array = patient_array[int(
+        x[0]/c.RESOLUTION):int(x[-1]/c.RESOLUTION)+1]
+
+    end = time.time()
+    runtime = end - start
+
+    logging.info("Patient treatment response simulation completed in {} seconds.".format(runtime))
+    
+    return x/31., patient_array
+
+def Radiation_Treatment_Response_Multiple(params, x, pop_manager, func_pointer):
+    """
+    """
     start = time.time()  # start timing
 
     p = params.valuesdict()
@@ -393,7 +427,8 @@ def KMSC_With_Radiotherapy(params, x, pop_manager, func_pointer):
                                              c.GR_RS_CORRELATION,
                                              retval=patient_size)
 
-    treatment_days = pop_manager.get_radiation_days(num_steps)
+    treatment_delay = pop_manager.get_treatment_delay()
+    treatment_days = pop_manager.get_radiation_days(treatment_delay, num_steps)
     death_volume = pop_manager.get_volume_from_diameter(c.DEATH_DIAMETER)
 
     id_list = list()

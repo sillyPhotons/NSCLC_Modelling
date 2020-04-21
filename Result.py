@@ -142,3 +142,4 @@ class ResultManager():
         plt.legend()
         plt.savefig(path + "/plot.pdf")
         plt.close()
+    

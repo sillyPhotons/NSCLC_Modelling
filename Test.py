@@ -303,16 +303,17 @@ class Test_GetProperties (unittest.TestCase):
             0.20, 0.20, 0.20, 0.20, 0.20)
         self.assertEqual(len(retval), self.pop_man.patient_size)
 
-    def test_get_radiation_days(self):
+    def test_get_radiation_days_and_get_treatment_delay(self):
 
         import Constants as c
 
         num_step_per_day = int(1/c.RESOLUTION)
-
+        treatment_delay = self.pop_man.get_treatment_delay()
+      
         func = self.pop_man.get_radiation_days
-        self.assertRaises(AssertionError, func, num_step_per_day*10)
+        self.assertRaises(AssertionError, func, treatment_delay, num_step_per_day*10)
 
-        retval = func(num_step_per_day*100)
+        retval = func(treatment_delay, num_step_per_day*100)
         self.assertEqual(retval.shape[0], self.pop_man.patient_size)
         self.assertEqual(retval.shape[1], num_step_per_day*100)
 

@@ -6,6 +6,8 @@ Script for reproducing results in Geng's paper:
     for Combined Chemo- and Radiation Therapy for Non-Small Cell Lung Cancer
     Patients Using a Bio-Mathematical Model. Sci Rep 7, 13542 (2017).
     https://doi.org/10.1038/s41598-017-13646-z
+
+TREATMENT RESPONSE FOR 1 Patient
 """
 
 if __name__ == '__main__':
@@ -31,63 +33,42 @@ if __name__ == '__main__':
     # initialize ray module for concurrency
     ray.init()
 
-    sampling_range = [0, 60]
-    monte_carlo_patient_size = 10
+    sampling_range = [0, 7]
+    monte_carlo_patient_size = 1
     pop_manager = gp.PropertyManager(monte_carlo_patient_size)
     res_manager = ResultManager()
 
-    # for stage in c.REFER_TUMOR_SIZE_DIST.keys():
-    for stage in [1]:
-        params = pop_manager.get_param_object_for_radiation()
-        print(params['K'])
-        x, data = rd.read_file("./Data/radiotherapy.csv",
-                               interval=sampling_range)
-        # x, data = rd.read_file("./Data/stage{}Better.csv".format(stage), interval=sampling_range)
+    #####
+    V0 = pop_manager.get_volume_from_diameter(8)
+    rho = 0.008
+    K = pop_manager.get_volume_from_diameter(30)
+    alpha = 0.3
+    beta = 0.03
+    delay_days = [14]
+    x = np.arange(
+        sampling_range[0]*31, sampling_range[1]*31 + c.RESOLUTION, c.RESOLUTION)
+    func = m.rk4_tumor_volume
+    #####
 
-        # vdts = pp.predict_VDT(params, np.arange(
-        #     sampling_range[0], sampling_range[1]*31 + c.RESOLUTION, c.RESOLUTION), pop_manager, m.tumor_volume_GENG)
+    x, tumor_volume = pp.Radiation_Response(V0,
+                                            rho,
+                                            K,
+                                            alpha,
+                                            beta,
+                                            delay_days,
+                                            x,
+                                            pop_manager,
+                                            func)
 
-        # plt.hist(vdts, 50, range = [0, 500],density=True, alpha=0.7, rwidth=0.85, align='left')
-        # plt.show()
-        x, tumor_volume = pp.Radiation_Treatment_Response(params,
-                                                          np.arange(
-                                                              sampling_range[0]*31, sampling_range[1]*31 + c.RESOLUTION, c.RESOLUTION),
-                                                          pop_manager,
-                                                          m.rk4_tumor_volume)
+    plt.plot(x*31., pop_manager.get_tumor_cell_number_from_volume(tumor_volume),
+             label="Radiotherapy Only", color="black", alpha=0.7,)
+    plt.xlabel("Days")
+    plt.ylabel("Number of Tumor Cells")
+    plt.yscale("log")
+    plt.savefig(res_manager.directory_path + "/response.pdf")
 
-        # print(tumor_volume)
-        # px, py = pp.KMSC_With_Radiotherapy(params,
-        #                                 np.arange(
-        #                                     sampling_range[0]*31, sampling_range[1]*31 + c.RESOLUTION, c.RESOLUTION),
-        #                                 pop_manager,
-        #                                 m.tumor_volume_GENG)
-        # pxlog, pylog = pp.KMSC_With_Radiotherapy(params,
-        #                                 np.arange(
-        #                                     sampling_range[0]*31, sampling_range[1]*31 + c.RESOLUTION, c.RESOLUTION),
-        #                                 pop_manager,
-        #                                 m.tumor_volume_GENG_Logistic)
-
-        for i in range(monte_carlo_patient_size):
-            res_manager.record_prediction(
-                ResultObj(plt.plot, x*31., pop_manager.get_diameter_from_volume(tumor_volume[i]), xdes="Days",
-                        ydes="Tumor Diameter [$cm$]", curve_label="Radiotherapy Only", label="Radiotherapy Only", color="black", alpha=0.7,),
-
-                # ResultObj(plt.scatter, x, data, "Months",
-                #         "Proportion of Patients Alive", curve_label="Radiotherapy Data", label="Radiotherapy Data", color="black", alpha=0.7, s=4),
-                # ResultObj(plt.step, px, py, "Months",
-                #         "Proportion of Patients Alive",
-                #         curve_label="Radiotherapy Model (Gompertzian)",
-                #         label="Radiotherapy Model", alpha=0.7),
-                # ResultObj(plt.step, pxlog, pylog, "Months",
-                #         "Proportion of Patients Alive",
-                #         curve_label="Radiotherapy Model (Logisitic)",
-                #         label="Radiotherapy Model", alpha=0.7),
-                # ResultObj(plt.step, x, data, "Months",
-                #           "Proportion of Patients Alive", curve_label="Stage {} Data".format(stage), label="Stage {} Data".format(stage), color="black", alpha=0.7),
-                # ResultObj(plt.step, px, py, "Months",
-                #           "Proportion of Patients Alive",
-                #           curve_label="Stage {} Model".format(stage),
-                #           label="Stage {} Model".format(stage), alpha=0.7),
-                # comment="Stage_[{}]".format(stage)
-                comment="Radiotherapy[{}]".format(i)
-            )
+    # res_manager.record_prediction(
+    #     ResultObj(plt.plot, x*31., pop_manager.get_diameter_from_volume(tumor_volume), xdes="Days",
+    #               ydes="Tumor Diameter [$cm$]", curve_label="Radiotherapy Only", label="Radiotherapy Only", color="black", alpha=0.7,),
+    #     comment="Radiotherapy"
+    # )
