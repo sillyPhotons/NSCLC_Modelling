@@ -52,6 +52,7 @@ def tumor_volume_GENG_Logistic(V0, rho, K, alpha=0, beta=0, dose_step=0, noise=0
 
     return V0 * np.exp(c.RESOLUTION * rho * V0 *(1 - V0/K)\
          - (alpha*dose + beta*dose**2)) + noise
+
 def tumor_volume_GENG(V0, rho, K, alpha=0, beta=0, dose_step=0,\
      noise=0):
     """
@@ -93,8 +94,8 @@ def tumor_volume_GENG(V0, rho, K, alpha=0, beta=0, dose_step=0,\
 
          
 
-
-def rk4_tumor_volume(V0, rho, K, alpha=0, beta=0, dose_step=False, noise=0):
+#FIXME
+def rk4_tumor_volume(V0, rho, K, alpha=0, beta=0, dose_step=0, noise=0):
     """
     4th Order Runge Kutta method to solve the ODE (Equation 7)
 
@@ -132,19 +133,19 @@ def rk4_tumor_volume(V0, rho, K, alpha=0, beta=0, dose_step=False, noise=0):
         np.log(K / V0) - (alpha *
                           dose + beta*dose**2) * V0
 
-    k2 = (V0 + c.RESOLUTION * k1 / 2.) * rho * \
-        np.log(K / (V0 + c.RESOLUTION * k1 / 2.)) \
-             - (alpha * dose + beta*dose**2) * (V0 + c.RESOLUTION * k1 / 2.)
+    k2 = (V0 + (c.RESOLUTION * k1 / 2.)) * rho * \
+        np.log(K / (V0 + (c.RESOLUTION * k1 / 2.))) \
+             - (alpha * dose + beta*dose**2) * (V0 + (c.RESOLUTION * k1 / 2.))
 
-    k3 = (V0 + c.RESOLUTION * k2 / 2.) * rho * \
-        np.log(K / (V0 + c.RESOLUTION * k2 / 2.)) \
-             - (alpha * dose + beta*dose**2) * (V0 + c.RESOLUTION * k2 / 2.)
+    k3 = (V0 + (c.RESOLUTION * k2 / 2.)) * rho * \
+        np.log(K / (V0 + (c.RESOLUTION * k2 / 2.))) \
+             - (alpha * dose + beta*dose**2) * (V0 + (c.RESOLUTION * k2 / 2.))
 
-    k4 = (V0 + c.RESOLUTION * k3) * rho * \
-        np.log(K / (V0 + c.RESOLUTION * k3)) \
-            - (alpha * dose + beta*dose**2) * (V0 + c.RESOLUTION * k3)
+    k4 = (V0 + (c.RESOLUTION * k3)) * rho * \
+        np.log(K / (V0 + (c.RESOLUTION * k3))) \
+            - (alpha * dose + beta*dose**2) * (V0 + (c.RESOLUTION * k3))
 
-    return V0 + (1./6) * c.RESOLUTION * (k1 + 2*k2 + 2*k3 + k4) + noise
+    return V0 + (1./6.) * c.RESOLUTION * (k1 + 2*k2 + 2*k3 + k4) + noise
 
 
 def euler_tumor_volume(V0, rho, K, alpha=0, beta=0, dose_step=False, noise=0):

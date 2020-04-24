@@ -129,12 +129,19 @@ def sim_patient_radiation_response(num_steps, initial_volume, treatment_days, fu
 
     cancer_volume = np.zeros(num_steps)
     cancer_volume[0] = initial_volume
-
+    recover_prob = np.random.rand(num_steps)
+    
+    recover = False
     for i in range(1, num_steps):
 
-        cancer_volume[i] = func_pointer(
-            cancer_volume[i - 1], *func_args, **func_kwargs, dose_step=treatment_days[i-1])
-
+        if recover:
+            cancer_volume[i] = np.nan
+        else:
+            cancer_volume[i] = func_pointer(
+                cancer_volume[i - 1], *func_args, **func_kwargs, dose_step=treatment_days[i-1])
+        
+            if recover_prob[i] < np.exp(-cancer_volume[i] * c.TUMOR_DENSITY):
+                recover = True
     return cancer_volume
 
 

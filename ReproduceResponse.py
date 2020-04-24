@@ -27,13 +27,16 @@ if __name__ == '__main__':
     import GetProperties as gp
     from Result import ResultObj, ResultManager
 
+    plt.rc("text", usetex=True)
+    plt.rcParams['font.family'] = 'serif'
+    
     # configure logging
     logging.basicConfig(
         format='%(asctime)s %(levelname)s: %(message)s', datefmt='%m/%d/%Y %I:%M', level=logging.INFO)
     # initialize ray module for concurrency
     ray.init()
 
-    sampling_range = [0, 13]
+    sampling_range = [0, 7]
     monte_carlo_patient_size = 1
     pop_manager = gp.PropertyManager(monte_carlo_patient_size)
     res_manager = ResultManager()
@@ -50,7 +53,19 @@ if __name__ == '__main__':
     func = m.tumor_volume_GENG
     #####
 
-    x, tumor_volume = pp.Radiation_Response(V0,
+    x1, tumor_volume1 = pp.Radiation_Response(V0,
+                                            rho,
+                                            K,
+                                            alpha,
+                                            beta,
+                                            delay_days,
+                                            x,
+                                            pop_manager,
+                                            func)
+    c.TOTAL_DOSE = 0
+    c.RAD_DOSE = 8
+    c.SCHEME = [2, 7]
+    x2, tumor_volume2 = pp.Radiation_Response(V0,
                                             rho,
                                             K,
                                             alpha,
@@ -60,8 +75,11 @@ if __name__ == '__main__':
                                             pop_manager,
                                             func)
 
-    plt.plot(x*31., pop_manager.get_tumor_cell_number_from_volume(tumor_volume),
+    plt.plot(x1*31., pop_manager.get_tumor_cell_number_from_volume(tumor_volume1),
              label="Radiotherapy Only", color="black", alpha=0.7,)
+    plt.plot(x2*31., pop_manager.get_tumor_cell_number_from_volume(tumor_volume2),
+             label="Radiotherapy Only", alpha=0.7,)
+
     plt.xlabel("Days")
     plt.ylabel("Number of Tumor Cells")
     plt.yscale("log")

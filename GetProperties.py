@@ -472,20 +472,32 @@ class PropertyManager ():
         rest = c.SCHEME[1] * one_day
 
         fraction_per_step = c.RAD_DOSE/one_day
+
+        dose_per_iteration = days_with_rad * fraction_per_step
+        max_full_iterations = int(c.TOTAL_DOSE/dose_per_iteration)
+
         for i in range(self.patient_size):
+
             steps_delayed = int(np.round(treatment_delay[i]/c.RESOLUTION))
 
             total_dose = 0
             last_step = steps_delayed
-
-            while total_dose < c.TOTAL_DOSE:
+            for num in range(max_full_iterations):
                 rad_days = last_step + days_with_rad
                 treatment_days[i][last_step:rad_days] = 1
                 total_dose += (fraction_per_step) * (rad_days - last_step)
                 last_step = rad_days + rest
 
+            while total_dose < c.TOTAL_DOSE:
+                rad_days = last_step + one_day
+                treatment_days[i][last_step:rad_days] = 1
+                total_dose += (fraction_per_step) * (rad_days - last_step)
+                last_step = rad_days
             entries = np.count_nonzero(treatment_days[i])
 
             assert(entries*fraction_per_step == c.TOTAL_DOSE)
 
         return treatment_days
+
+pop = PropertyManager(1)
+pop.get_radiation_days([14], 1000000)

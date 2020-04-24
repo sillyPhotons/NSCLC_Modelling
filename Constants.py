@@ -62,7 +62,7 @@ GR_RS_CORRELATION = 0.87
 # GR_RS_CORRELATION = 0
 
 # Number of months passed per time step
-RESOLUTION = 0.01
+RESOLUTION = 0.001
 
 # 1.48% survival reduction
 SURVIVAL_REDUCTION = 0
@@ -74,7 +74,7 @@ RAD_DOSE = 2
 TOTAL_DOSE = 60
 
 # RTOG8808 Patients received 2 Gy fractions 5 days followed by 2 day rest
-SCHEME = [7, 2]
+SCHEME = [5, 2]
 
 # Radiosensitivity parameter with units [Gy^-1]. alpha/beta = 10 (Mehta 2001)
 RAD_ALPHA = [0.0398, 0.168, 0, np.inf]
