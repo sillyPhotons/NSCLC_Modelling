@@ -1,0 +1,16 @@
+[[Fit Statistics]]
+    # fitting method   = Powell
+    # function evals   = 154
+    # data points      = 60
+    # variables        = 3
+    chi-square         = 0.16742714
+    reduced chi-square = 0.00293732
+    Akaike info crit   = -346.893094
+    Bayesian info crit = -340.610060
+[[Variables]]
+    Resolution:  1 (fixed)
+    rho_mu:      3.0137e-04 +/- 2.7930e-04 (92.67%) (init = 7e-05)
+    rho_sigma:   0.00592847 +/- 1.8854e-04 (3.18%) (init = 0.00723)
+    K:           14135.9048 +/- 1.73032154 (0.01%) (init = 14137.17)
+    V_mu:        2.5 (fixed)
+    V_sigma:     2.5 (fixed)

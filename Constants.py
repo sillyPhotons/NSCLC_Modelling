@@ -44,12 +44,6 @@ RADIATION_ONLY_PATIENT_PERCENTAGE = {'1': 0,
                                      '3B': 50/100.,
                                      "4": 0}
 
-RADIATION_ONLY_PATIENT_PERCENTAGE = {'1': 0,
-                                     "2": 0,
-                                     "3A": 0,
-                                     "3B": 0,
-                                     "4": 100/100}
-
 
 """
 The delay time, which is the time between diagnosis and the start of the
@@ -62,7 +56,7 @@ GR_RS_CORRELATION = 0.87
 # GR_RS_CORRELATION = 0
 
 # Number of months passed per time step
-RESOLUTION = 0.001
+RESOLUTION = 1
 
 # 1.48% survival reduction
 SURVIVAL_REDUCTION = 0
@@ -79,6 +73,7 @@ SCHEME = [5, 2]
 # Radiosensitivity parameter with units [Gy^-1]. alpha/beta = 10 (Mehta 2001)
 RAD_ALPHA = [0.0398, 0.168, 0, np.inf]
 
+ALPHA_PER_BETA = 10.
 """
 Values given in table 2 of the mean and median of the fitted volume 
 distribution. To convert to input parameters for lognormal distribution 

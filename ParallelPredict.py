@@ -210,8 +210,9 @@ def Radiation_Treatment_Response_Multiple(params, x, pop_manager, func_pointer):
                                              rho,
                                              c.GR_RS_CORRELATION,
                                              retval=patient_size)
-
-    treatment_days = pop_manager.get_radiation_days(num_steps)
+                                             
+    treatment_delay = pop_manager.get_treatment_delay()
+    treatment_days = pop_manager.get_radiation_days(treatment_delay, num_steps)
     
     id_list = list()
     for num in range(patient_size):
@@ -224,7 +225,7 @@ def Radiation_Treatment_Response_Multiple(params, x, pop_manager, func_pointer):
                                                  alpha_and_rho[num, 1],
                                                  K,
                                                  alpha=alpha_and_rho[num, 0],
-                                                 beta=alpha_and_rho[num, 0]/10.
+                                                 beta=alpha_and_rho[num, 0]/c.ALPHA_PER_BETA
                                                  )
 
         id_list.append(obj_id)
@@ -415,11 +416,11 @@ def KMSC_With_Radiotherapy(params, x, pop_manager, func_pointer):
     patients_alive = [patient_size] * num_steps
 
     initial_diameters = pop_manager.get_initial_diameters(
-        stage_1=0,
+        stage_1=c.RADIATION_ONLY_PATIENT_PERCENTAGE["1"],
         stage_2=c.RADIATION_ONLY_PATIENT_PERCENTAGE["2"],
         stage_3A=c.RADIATION_ONLY_PATIENT_PERCENTAGE["3A"],
         stage_3B=c.RADIATION_ONLY_PATIENT_PERCENTAGE["3B"],
-        stage_4=0)
+        stage_4=c.RADIATION_ONLY_PATIENT_PERCENTAGE["4"])
 
     initial_volume =\
         pop_manager.get_volume_from_diameter(np.array(initial_diameters))
@@ -450,7 +451,7 @@ def KMSC_With_Radiotherapy(params, x, pop_manager, func_pointer):
                                                  alpha_and_rho[num, 1],
                                                  K,
                                                  alpha=alpha_and_rho[num, 0],
-                                                 beta=alpha_and_rho[num, 0]/10.
+                                                 beta=alpha_and_rho[num, 0]/c.ALPHA_PER_BETA
                                                  )
 
         id_list.append(obj_id)

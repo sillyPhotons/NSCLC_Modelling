@@ -9,7 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from lmfit import Minimizer, Parameters, report_fit
 
-import Constants
+import Constants as c
 import Model as m
 import ReadData as rd
 import CostFunction as cf
@@ -48,18 +48,18 @@ def run(cost_function, params, fcn_args):
 
 # Determine the domain of KMSc curve. [0,60] means from month 0 to month 60
 # this range should be converted to days when creating an array of this range
-sampling_range = [0, 60]
+sampling_range = [0, 59]
 
 # The number of patients to generate for the minization of the cost function
-monte_carlo_patient_size = 2000
+monte_carlo_patient_size = 1000
 
 # Get an instance of a PropertyManager object, and initialize it patient size
 pop_manager = gp.PropertyManager(monte_carlo_patient_size)
 
 res_manager = ResultManager()
 
-for stage in Constants.TABLE3.keys():
-    # for stage in ["4"]:
+# for stage in c.TABLE3.keys():
+for stage in ["1"]:
     """
     Parameters object, we add Parameter objects to it, and we can specify
     whether that Parameter object can vary, and provide bounds to the value 
@@ -72,32 +72,31 @@ for stage in Constants.TABLE3.keys():
     """
     params = Parameters()
     # Added so that it shows up in the report file
-    params.add("Resolution", value=Constants.RESOLUTION, vary=False)
+    params.add("Resolution", value=c.RESOLUTION, vary=False)
     params.add('rho_mu', value=7.00*10**-5, min=0, vary=False)
     params.add('rho_sigma', value=7.23*10**-3, min=0, vary=False)
     params.add('K',
                value=pop_manager.get_volume_from_diameter(30),
                min=0,
-               vary=False)
-    params.add('V_mu',
-               value=Constants.TABLE3[stage][0],
-               vary=False,
-               min=Constants.TABLE3[stage][2],
-               max=Constants.TABLE3[stage][3])
-    params.add('V_sigma',
-               value=Constants.TABLE3[stage][1],
+               vary=True)
+    params.add('alpha_mu',
+               value=c.RAD_ALPHA[0],
                vary=True,
-               min=Constants.TABLE3[stage][2],
-               max=Constants.TABLE3[stage][3])
+               min=c.RAD_ALPHA[2],
+               max=c.RAD_ALPHA[3])
+    params.add('alpha_sigma',
+               value=c.RAD_ALPHA[1],
+               vary=True,
+               min=c.RAD_ALPHA[2],
+               max=c.RAD_ALPHA[3])
 
-    dat = np.loadtxt("./Data/stage{}Better.csv".format(stage), delimiter=',')
-    x, data = rd.read_file(dat)
+    x, data = rd.read_file("./Data/radiotherapy.csv", interval=sampling_range)
+
     # around the x_coordinates of the data, convert to days
     x = np.around(x) * 31
-    
 
     # Run minimization
-    result = run(cf.cost_function, params,
+    result = run(cf.cost_function_radiotherapy, params,
                  fcn_args=(x, data, pop_manager,
                            m.tumor_volume_GENG))
 
