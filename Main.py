@@ -51,7 +51,7 @@ def run(cost_function, params, fcn_args):
 sampling_range = [0, 59]
 
 # The number of patients to generate for the minization of the cost function
-monte_carlo_patient_size = 1000
+monte_carlo_patient_size = 5000
 
 # Get an instance of a PropertyManager object, and initialize it patient size
 pop_manager = gp.PropertyManager(monte_carlo_patient_size)
@@ -78,7 +78,7 @@ for stage in ["1"]:
     params.add('K',
                value=pop_manager.get_volume_from_diameter(30),
                min=0,
-               vary=True)
+               vary=False)
     params.add('alpha_mu',
                value=c.RAD_ALPHA[0],
                vary=True,
@@ -89,6 +89,11 @@ for stage in ["1"]:
                vary=True,
                min=c.RAD_ALPHA[2],
                max=c.RAD_ALPHA[3])
+    params.add("corr",
+               value=c.GR_RS_CORRELATION,
+               vary=False,
+               min=-1,
+               max=1)
 
     x, data = rd.read_file("./Data/radiotherapy.csv", interval=sampling_range)
 

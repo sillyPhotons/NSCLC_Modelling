@@ -329,23 +329,25 @@ class PropertyManager ():
         mu = np.log(c.TABLE2[stage][1])
         sigma = np.sqrt(2*(np.abs(np.log(c.TABLE2[stage][0]) - mu)))
 
+        params.add('V_mu',
+                   value=mu,
+                   vary=False)
+        params['V_mu'].min = c.TABLE3[stage][2]
+        params['V_mu'].max = c.TABLE3[stage][3]
+        
+        params.add('V_sigma',
+                   value=sigma,
+                   vary=False)
+        params['V_sigma'].min = c.TABLE3[stage][2]
+        params['V_sigma'].max = c.TABLE3[stage][3]
+
         params.add("rho_mu", value=c.RHO[0],
                    min=c.RHO[2], max=c.RHO[3], vary=False)
         params.add("rho_sigma", value=c.RHO[1],
                    min=c.RHO[2], max=c.RHO[3], vary=False)
         params.add('K', value=self.get_volume_from_diameter(c.K),
                    min=0, vary=False)
-        params.add('V_mu',
-                   value=mu,
-                   vary=False,
-                   min=c.TABLE3[stage][2],
-                   max=c.TABLE3[stage][3])
-        params.add('V_sigma',
-                   value=sigma,
-                   vary=False,
-                   min=c.TABLE3[stage][2],
-                   max=c.TABLE3[stage][3])
-
+        
         return params
 
     def get_param_object_for_radiation(self):
@@ -371,7 +373,12 @@ class PropertyManager ():
                    vary=False,
                    min=c.RAD_ALPHA[2],
                    max=c.RAD_ALPHA[3])
-
+        params.add("corr",
+               value=c.GR_RS_CORRELATION,
+               vary=True,
+               min=-1,
+               max=1)
+               
         return params
 
     def get_initial_diameters(self, stage_1=1, stage_2=0, stage_3A=0, stage_3B=0, stage_4=0):
@@ -498,6 +505,3 @@ class PropertyManager ():
             assert(entries*fraction_per_step == c.TOTAL_DOSE)
 
         return treatment_days
-
-pop = PropertyManager(1)
-pop.get_radiation_days([14], 1000000)

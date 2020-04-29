@@ -187,7 +187,7 @@ def Radiation_Treatment_Response_Multiple(params, x, pop_manager, func_pointer):
     K = p['K']
     alpha_mu = p['alpha_mu']
     alpha_sigma = p['alpha_sigma']
-
+    corr = p['corr']
     patient_size = pop_manager.get_patient_size()
     num_steps = int(x.size + x[0]/c.RESOLUTION)
 
@@ -208,7 +208,7 @@ def Radiation_Treatment_Response_Multiple(params, x, pop_manager, func_pointer):
     alpha_and_rho =\
         pop_manager.sample_correlated_params(alpha,
                                              rho,
-                                             c.GR_RS_CORRELATION,
+                                             corr,
                                              retval=patient_size)
                                              
     treatment_delay = pop_manager.get_treatment_delay()
@@ -409,7 +409,7 @@ def KMSC_With_Radiotherapy(params, x, pop_manager, func_pointer):
     K = p['K']
     alpha_mu = p['alpha_mu']
     alpha_sigma = p['alpha_sigma']
-
+    corr = p['corr']
     patient_size = pop_manager.get_patient_size()
     num_steps = int(x.size + x[0]/c.RESOLUTION)
 
@@ -432,7 +432,7 @@ def KMSC_With_Radiotherapy(params, x, pop_manager, func_pointer):
     alpha_and_rho =\
         pop_manager.sample_correlated_params(alpha,
                                              rho,
-                                             c.GR_RS_CORRELATION,
+                                             corr,
                                              retval=patient_size)
 
     treatment_delay = pop_manager.get_treatment_delay()

@@ -4,6 +4,7 @@ import unittest
 import Model
 import Result
 import ReadData
+import Constants
 import GetProperties
 import ParallelPredict
 
@@ -340,6 +341,12 @@ class Test_ParallelPredict (unittest.TestCase):
         death_time = ParallelPredict.sim_patient_death_time.remote(100, 50000, 10, func_pointer, 100, 5000000)
 
         self.assertEqual(ray.get(death_time), 1)
+
+class Test_Constants(unittest.TestCase):
+
+    def test_Constants(self):
+        self.assertEqual(Constants.DEATH_DIAMETER, 13.)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

@@ -102,7 +102,6 @@ def get_fitted_data(x, y, increment):
 
     return fitted_x, fitted_y
 
-
 def plot(x, y, curve_label, xlabel, ylabel, title, fit = False):
     """
     Plots the given `x` and `y` array with the given `xlabel`, `ylabel`, 
@@ -131,11 +130,24 @@ def plot(x, y, curve_label, xlabel, ylabel, title, fit = False):
     if fit:
         plt.plot(fitted_x, fitted_y, label="Fitted Curve")
     
-    plt.step(x, y, label=curve_label, alpha=0.7)
+    plt.scatter(x, y, label=curve_label, alpha=0.7, s = 25)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.legend()
     plt.minorticks_on()
     plt.title(title)
-    plt.show()
-    
+    # plt.show()
+
+import Constants as c
+import matplotlib.pyplot as plt
+import numpy as np
+
+plt.rc("text", usetex=True)
+# plt.rcParams['font.family'] = 'serif'
+plt.rcParams.update({'font.size': 18,
+                     'figure.autolayout': True})
+for key in c.TABLE2.keys():
+    x,y = read_file("./Data/stage{}Better.csv".format(key), [0,59])
+    plot(x, y, "Stage {}".format(key), "Time [months]", "Proportion of Patients Alive", "")
+
+plt.savefig("untreated_data.pdf")
