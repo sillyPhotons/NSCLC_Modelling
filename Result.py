@@ -121,7 +121,9 @@ class ResultManager():
         """
 
         plt.rc("text", usetex=True)
-        plt.rcParams['font.family'] = 'serif'
+        # plt.rcParams['font.family'] = 'serif'
+        plt.rcParams.update({'font.size': 18,
+                             'figure.autolayout': True})
 
         now = datetime.now().strftime("%d_%m_%Y_%H:%M:%S")
         path = self.directory_path + "/{}_{}".format(comment, now)

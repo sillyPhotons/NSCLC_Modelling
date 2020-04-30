@@ -138,16 +138,16 @@ def plot(x, y, curve_label, xlabel, ylabel, title, fit = False):
     plt.title(title)
     # plt.show()
 
-import Constants as c
-import matplotlib.pyplot as plt
-import numpy as np
+# import Constants as c
+# import matplotlib.pyplot as plt
+# import numpy as np
 
-plt.rc("text", usetex=True)
-# plt.rcParams['font.family'] = 'serif'
-plt.rcParams.update({'font.size': 18,
-                     'figure.autolayout': True})
-for key in c.TABLE2.keys():
-    x,y = read_file("./Data/stage{}Better.csv".format(key), [0,59])
-    plot(x, y, "Stage {}".format(key), "Time [months]", "Proportion of Patients Alive", "")
+# plt.rc("text", usetex=True)
+# # plt.rcParams['font.family'] = 'serif'
+# plt.rcParams.update({'font.size': 18,
+#                      'figure.autolayout': True})
+# for key in c.TABLE2.keys():
+#     x,y = read_file("./Data/stage{}Better.csv".format(key), [0,59])
+#     plot(x, y, "Stage {}".format(key), "Time [months]", "Proportion of Patients Alive", "")
 
-plt.savefig("untreated_data.pdf")
+# plt.savefig("untreated_data.pdf")

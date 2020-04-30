@@ -1,0 +1,17 @@
+[[Fit Statistics]]
+    # fitting method   = Powell
+    # function evals   = 67
+    # data points      = 60
+    # variables        = 2
+    chi-square         = 0.10529795
+    reduced chi-square = 0.00181548
+    Akaike info crit   = -376.718351
+    Bayesian info crit = -372.529662
+##  Warning: uncertainties could not be estimated:
+[[Variables]]
+    V_mu:        1.20894853 +/-        nan (nan%) (init = 1.261298)
+    V_sigma:     2.51514410 +/-        nan (nan%) (init = 0.6936207)
+    rho_mu:      7e-05 (fixed)
+    rho_sigma:   0.00723 (fixed)
+    K:           14137.17 (fixed)
+    Resolution:  1 (fixed)

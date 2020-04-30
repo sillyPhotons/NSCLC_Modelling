@@ -338,8 +338,7 @@ class PropertyManager ():
         params.add('V_sigma',
                    value=sigma,
                    vary=False)
-        params['V_sigma'].min = c.TABLE3[stage][2]
-        params['V_sigma'].max = c.TABLE3[stage][3]
+        params['V_sigma'].min = 0 
 
         params.add("rho_mu", value=c.RHO[0],
                    min=c.RHO[2], max=c.RHO[3], vary=False)
@@ -378,7 +377,7 @@ class PropertyManager ():
                vary=True,
                min=-1,
                max=1)
-               
+
         return params
 
     def get_initial_diameters(self, stage_1=1, stage_2=0, stage_3A=0, stage_3B=0, stage_4=0):
@@ -505,3 +504,22 @@ class PropertyManager ():
             assert(entries*fraction_per_step == c.TOTAL_DOSE)
 
         return treatment_days
+
+plt.rc("text", usetex=True)
+        
+plt.rcParams.update({'font.size': 18,
+                     'figure.autolayout': True})
+
+pop_man = PropertyManager(10000)
+
+for stage in ["1"]:
+    param = pop_man.get_param_object_for_no_treatment(stage)
+    p = param.valuesdict()
+    volumes = pop_man.sample_lognormal_param(p['V_mu'], p['V_sigma'], 200000, param['V_mu'].min, param['V_mu'].max)
+    
+
+    plt.hist(volumes, 5, range = [0, 5],density=True, alpha=0.7, rwidth=0.95, label = "Mean = 1.66\nMedian = 1.23")
+    plt.xlabel("Diameter [cm]")
+    plt.ylabel("Frequency")
+    plt.legend()
+    plt.savefig("../Report/vd{}.pdf".format(stage))

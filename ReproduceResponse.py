@@ -28,8 +28,8 @@ if __name__ == '__main__':
     from Result import ResultObj, ResultManager
 
     plt.rc("text", usetex=True)
-    plt.rcParams['font.family'] = 'serif'
-    
+    plt.rcParams.update({'font.size': 18,
+                         'figure.autolayout': True })
     # configure logging
     logging.basicConfig(
         format='%(asctime)s %(levelname)s: %(message)s', datefmt='%m/%d/%Y %I:%M', level=logging.INFO)
@@ -62,9 +62,9 @@ if __name__ == '__main__':
                                             x,
                                             pop_manager,
                                             func)
-    c.TOTAL_DOSE = 0
-    c.RAD_DOSE = 8
-    c.SCHEME = [2, 7]
+    c.TOTAL_DOSE = 60
+    c.RAD_DOSE = 2
+    c.SCHEME = [3, 4]
     x2, tumor_volume2 = pp.Radiation_Response(V0,
                                             rho,
                                             K,
@@ -75,14 +75,30 @@ if __name__ == '__main__':
                                             pop_manager,
                                             func)
 
-    plt.plot(x1*31., pop_manager.get_tumor_cell_number_from_volume(tumor_volume1),
-             label="Radiotherapy Only", color="black", alpha=0.7,)
-    plt.plot(x2*31., pop_manager.get_tumor_cell_number_from_volume(tumor_volume2),
-             label="Radiotherapy Only", alpha=0.7,)
+    c.TOTAL_DOSE = 120
+    c.RAD_DOSE = 2
+    c.SCHEME = [4, 2]
+    x3, tumor_volume3 = pp.Radiation_Response(V0,
+                                            rho,
+                                            K,
+                                            alpha,
+                                            beta,
+                                            delay_days,
+                                            x,
+                                            pop_manager,
+                                            func)
 
-    plt.xlabel("Days")
+    plt.plot(x1*31., pop_manager.get_tumor_cell_number_from_volume(tumor_volume1),
+             label="(60,5,2) Scheme", color="black", alpha=0.7, linewidth=3)
+    plt.plot(x2*31., pop_manager.get_tumor_cell_number_from_volume(tumor_volume2),
+             label="(60,3,4) Scheme", alpha=0.7, linewidth=3)
+    plt.plot(x3*31., pop_manager.get_tumor_cell_number_from_volume(tumor_volume3),
+             label="(120,5,2) Scheme", alpha=0.7, linewidth=3)
+    plt.xlabel("Time [days]")
     plt.ylabel("Number of Tumor Cells")
-    plt.yscale("log")
+    # plt.yscale("log")
+    plt.legend()
+
     plt.savefig(res_manager.directory_path + "/response.pdf")
 
     # res_manager.record_prediction(

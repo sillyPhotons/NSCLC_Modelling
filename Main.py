@@ -56,10 +56,12 @@ monte_carlo_patient_size = 5000
 # Get an instance of a PropertyManager object, and initialize it patient size
 pop_manager = gp.PropertyManager(monte_carlo_patient_size)
 
-res_manager = ResultManager()
+# res_manager = ResultManager()
 
-# for stage in c.TABLE3.keys():
-for stage in ["1"]:
+for stage in c.TABLE3.keys():
+    
+    res_manager = ResultManager()   
+# for stage in ["1"]:
     """
     Parameters object, we add Parameter objects to it, and we can specify
     whether that Parameter object can vary, and provide bounds to the value 
@@ -70,38 +72,40 @@ for stage in ["1"]:
         upper and lower of `value`: `min`, and `max`
         whether this varies during minimization `vary`
     """
-    params = Parameters()
+    params = pop_manager.get_param_object_for_no_treatment(stage=stage)
     # Added so that it shows up in the report file
     params.add("Resolution", value=c.RESOLUTION, vary=False)
-    params.add('rho_mu', value=7.00*10**-5, min=0, vary=False)
-    params.add('rho_sigma', value=7.23*10**-3, min=0, vary=False)
-    params.add('K',
-               value=pop_manager.get_volume_from_diameter(30),
-               min=0,
-               vary=False)
-    params.add('alpha_mu',
-               value=c.RAD_ALPHA[0],
-               vary=True,
-               min=c.RAD_ALPHA[2],
-               max=c.RAD_ALPHA[3])
-    params.add('alpha_sigma',
-               value=c.RAD_ALPHA[1],
-               vary=True,
-               min=c.RAD_ALPHA[2],
-               max=c.RAD_ALPHA[3])
-    params.add("corr",
-               value=c.GR_RS_CORRELATION,
-               vary=False,
-               min=-1,
-               max=1)
+    params['V_mu'].vary = True
+    params['V_sigma'].vary = True
+    params.pretty_print()
+    # params.add('rho_mu', value=7.00*10**-5, min=0, vary=False)
+    # params.add('rho_sigma', value=7.23*10**-3, min=0, vary=False)
+    # params.add('K',
+    #            value=pop_manager.get_volume_from_diameter(30),
+    #            min=0,
+    #            vary=False)
+    # params.add('alpha_mu',
+    #            value=c.RAD_ALPHA[0],
+    #            vary=True,
+    #            min=c.RAD_ALPHA[2],
+    #            max=c.RAD_ALPHA[3])
+    # params.add('alpha_sigma',
+    #            value=c.RAD_ALPHA[1],
+    #            vary=True,
+    #            min=0 )
+    # params.add("corr",
+    #            value=c.GR_RS_CORRELATION,
+    #            vary=False,
+    #            min=-1,
+    #            max=1)
 
-    x, data = rd.read_file("./Data/radiotherapy.csv", interval=sampling_range)
+    x, data = rd.read_file("./Data/stage{}Better.csv".format(stage), interval=sampling_range)
 
     # around the x_coordinates of the data, convert to days
     x = np.around(x) * 31
 
     # Run minimization
-    result = run(cf.cost_function_radiotherapy, params,
+    result = run(cf.cost_function, params,
                  fcn_args=(x, data, pop_manager,
                            m.tumor_volume_GENG))
 
@@ -118,9 +122,9 @@ for stage in ["1"]:
     # Passign ResultObj into the ResultManager object, where they are plotted and
     # saved
     res_manager.record_simulation(result,
-                                  ResultObj(plt.step, x, data, "Days",
-                                            "Proportion of Patients Alive", curve_label="Stage {} Data".format(stage), label="Stage {} Data".format(stage), color="black", alpha=0.7),
-                                  ResultObj(plt.step, x, data + result.residual, "Days",
+                                  ResultObj(plt.scatter, x/31., data, "Days",
+                                            "Proportion of Patients Alive", curve_label="Stage {} Data".format(stage), label="Stage {} Data".format(stage), s = 25, alpha=0.7),
+                                  ResultObj(plt.step, x/31., data + result.residual, "Days",
                                             "Proportion of Patients Alive", curve_label="{} Patient Model".format(monte_carlo_patient_size), label="{} Patient Model".format(monte_carlo_patient_size), alpha=0.7),
                                   # ResultObj(plt.step, px, py, "Months", "Proportion of Patients Alive",
                                   # curve_label="{} Patients Model Prediction".format(pop_manager2.get_patient_size()), label="{} Patients Model Prediction".format
