@@ -46,8 +46,8 @@ if __name__ == '__main__':
         vdts = pp.predict_VDT(params, np.arange(
             sampling_range[0], sampling_range[1]*31 + c.RESOLUTION, c.RESOLUTION), pop_manager, m.tumor_volume_GENG)
 
-        plt.hist(vdts, 50, range = [0, 500],density=True, alpha=0.7, rwidth=0.85, align='left')
-        plt.show()
+        # plt.hist(vdts, 50, range = [0, 500],density=True, alpha=0.7, rwidth=0.85, align='left')
+        # plt.show()
 
         # px, py = pp.KMSC_No_Treatment(params,
         #                                 np.arange(

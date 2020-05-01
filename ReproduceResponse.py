@@ -40,7 +40,7 @@ if __name__ == '__main__':
     monte_carlo_patient_size = 1
     pop_manager = gp.PropertyManager(monte_carlo_patient_size)
     res_manager = ResultManager()
-
+    
     #####
     V0 = pop_manager.get_volume_from_diameter(8)
     rho = 0.008
@@ -52,33 +52,7 @@ if __name__ == '__main__':
         sampling_range[0]*31, sampling_range[1]*31 + c.RESOLUTION, c.RESOLUTION)
     func = m.tumor_volume_GENG
     #####
-
     x1, tumor_volume1 = pp.Radiation_Response(V0,
-                                            rho,
-                                            K,
-                                            alpha,
-                                            beta,
-                                            delay_days,
-                                            x,
-                                            pop_manager,
-                                            func)
-    c.TOTAL_DOSE = 60
-    c.RAD_DOSE = 2
-    c.SCHEME = [3, 4]
-    x2, tumor_volume2 = pp.Radiation_Response(V0,
-                                            rho,
-                                            K,
-                                            alpha,
-                                            beta,
-                                            delay_days,
-                                            x,
-                                            pop_manager,
-                                            func)
-
-    c.TOTAL_DOSE = 120
-    c.RAD_DOSE = 2
-    c.SCHEME = [4, 2]
-    x3, tumor_volume3 = pp.Radiation_Response(V0,
                                             rho,
                                             K,
                                             alpha,
@@ -89,17 +63,67 @@ if __name__ == '__main__':
                                             func)
 
     plt.plot(x1*31., pop_manager.get_tumor_cell_number_from_volume(tumor_volume1),
-             label="(60,5,2) Scheme", color="black", alpha=0.7, linewidth=3)
+             label="Geng", color="black", alpha=0.7, linewidth=3)
+
+    # c.TOTAL_DOSE = 60
+    # c.RAD_DOSE = 2
+    # c.SCHEME = [3, 4]
+    func = m.euler_tumor_volume
+    c.RESOLUTION = 0.5
+    x = np.arange(
+        sampling_range[0]*31, sampling_range[1]*31 + c.RESOLUTION, c.RESOLUTION)
+    x2, tumor_volume2 = pp.Radiation_Response(V0,
+                                            rho,
+                                            K,
+                                            alpha,
+                                            beta,
+                                            delay_days,
+                                            x,
+                                            pop_manager,
+                                            func)
+
     plt.plot(x2*31., pop_manager.get_tumor_cell_number_from_volume(tumor_volume2),
-             label="(60,3,4) Scheme", alpha=0.7, linewidth=3)
+             label="Forward Euler", alpha=0.7, linewidth=3)
+
+    func = m.euler_tumor_volume
+    c.RESOLUTION = 0.1
+    x = np.arange(
+        sampling_range[0]*31, sampling_range[1]*31 + c.RESOLUTION, c.RESOLUTION)
+    x3, tumor_volume3 = pp.Radiation_Response(V0,
+                                            rho,
+                                            K,
+                                            alpha,
+                                            beta,
+                                            delay_days,
+                                            x,
+                                            pop_manager,
+                                            func)
+
+    # c.TOTAL_DOSE = 120
+    # c.RAD_DOSE = 2
+    # c.SCHEME = [4, 2]
+    # x3, tumor_volume3 = pp.Radiation_Response(V0,
+    #                                         rho,
+    #                                         K,
+    #                                         alpha,
+    #                                         beta,
+    #                                         delay_days,
+    #                                         x,
+    #                                         pop_manager,
+    #                                         func)
+
+   
+
+   
     plt.plot(x3*31., pop_manager.get_tumor_cell_number_from_volume(tumor_volume3),
-             label="(120,5,2) Scheme", alpha=0.7, linewidth=3)
+             label="Runge-Kutta", alpha=0.7, linewidth=3)
+    plt.title("$\Delta t = {}$".format(c.RESOLUTION))
     plt.xlabel("Time [days]")
     plt.ylabel("Number of Tumor Cells")
     # plt.yscale("log")
     plt.legend()
-
-    plt.savefig(res_manager.directory_path + "/response.pdf")
+    plt.show()
+    # plt.savefig(res_manager.directory_path + "/response.pdf")
 
     # res_manager.record_prediction(
     #     ResultObj(plt.plot, x*31., pop_manager.get_diameter_from_volume(tumor_volume), xdes="Days",

@@ -374,7 +374,7 @@ class PropertyManager ():
                    max=c.RAD_ALPHA[3])
         params.add("corr",
                value=c.GR_RS_CORRELATION,
-               vary=True,
+               vary=False,
                min=-1,
                max=1)
 
@@ -505,21 +505,34 @@ class PropertyManager ():
 
         return treatment_days
 
-plt.rc("text", usetex=True)
+# plt.rc("text", usetex=True)
         
-plt.rcParams.update({'font.size': 18,
-                     'figure.autolayout': True})
+# plt.rcParams.update({'font.size': 18,
+#                      'figure.autolayout': True})
 
-pop_man = PropertyManager(10000)
+# pop_man = PropertyManager(10000)
 
-for stage in ["1"]:
-    param = pop_man.get_param_object_for_no_treatment(stage)
-    p = param.valuesdict()
-    volumes = pop_man.sample_lognormal_param(p['V_mu'], p['V_sigma'], 200000, param['V_mu'].min, param['V_mu'].max)
+# fig, axs = plt.subplots(1, 2, sharex=True, sharey=True)
+
+# for stage in ["1"]:
+#     param = pop_man.get_param_object_for_no_treatment(stage)
+#     p = param.valuesdict()
+#     volumes = pop_man.sample_lognormal_param(p['V_mu'], p['V_sigma'], 200000, param['V_mu'].min, param['V_mu'].max)
+#     volumes2 = pop_man.sample_lognormal_param(p['V_mu'], p['V_sigma'], 200000, 0, param['V_mu'].max)
+
+#     print(p['V_mu'], p['V_sigma'])
+
+#     axs[0].hist(volumes, 5, range = [0, 5],density=True, alpha=0.7, rwidth=0.95, label = "Mean = 1.66\nMedian = 1.23")
+
+#     # axs[0].set_ylabel("Frequency")
+#     axs[1].hist(volumes2, 5, range = [0, 5],density=True, alpha=0.7, rwidth=0.95, label = "Mean = 1.66\nMedian = 1.23")
     
-
-    plt.hist(volumes, 5, range = [0, 5],density=True, alpha=0.7, rwidth=0.95, label = "Mean = 1.66\nMedian = 1.23")
-    plt.xlabel("Diameter [cm]")
-    plt.ylabel("Frequency")
-    plt.legend()
-    plt.savefig("../Report/vd{}.pdf".format(stage))
+#     fig.add_subplot(111, frameon=False)
+# # hide tick and tick label of the big axis
+# plt.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
+# plt.ylabel("Frequency")
+# plt.xlabel("Diameter [cm]")
+# plt.title("$V_{\mu}^{I} = 0.207$ cm, $V_{\sigma}^{I} = 0.774$ cm")
+# # plt.legend()
+# # plt.show()
+# plt.savefig("../Report/vd{}.pdf".format(stage))

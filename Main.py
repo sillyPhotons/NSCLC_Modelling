@@ -51,17 +51,14 @@ def run(cost_function, params, fcn_args):
 sampling_range = [0, 59]
 
 # The number of patients to generate for the minization of the cost function
-monte_carlo_patient_size = 5000
+monte_carlo_patient_size = 1000
 
 # Get an instance of a PropertyManager object, and initialize it patient size
 pop_manager = gp.PropertyManager(monte_carlo_patient_size)
 
-# res_manager = ResultManager()
+res_manager = ResultManager()
 
-for stage in c.TABLE3.keys():
-    
-    res_manager = ResultManager()   
-# for stage in ["1"]:
+for stage in ["1"]:
     """
     Parameters object, we add Parameter objects to it, and we can specify
     whether that Parameter object can vary, and provide bounds to the value 
@@ -72,12 +69,12 @@ for stage in c.TABLE3.keys():
         upper and lower of `value`: `min`, and `max`
         whether this varies during minimization `vary`
     """
-    params = pop_manager.get_param_object_for_no_treatment(stage=stage)
+    params = pop_manager.get_param_object_for_radiation()
     # Added so that it shows up in the report file
     params.add("Resolution", value=c.RESOLUTION, vary=False)
-    params['V_mu'].vary = True
-    params['V_sigma'].vary = True
-    params.pretty_print()
+
+    params['corr'].vary = True
+    # params['alpha_sigma'].vary = True
     # params.add('rho_mu', value=7.00*10**-5, min=0, vary=False)
     # params.add('rho_sigma', value=7.23*10**-3, min=0, vary=False)
     # params.add('K',
@@ -99,13 +96,13 @@ for stage in c.TABLE3.keys():
     #            min=-1,
     #            max=1)
 
-    x, data = rd.read_file("./Data/stage{}Better.csv".format(stage), interval=sampling_range)
-
+    # x, data = rd.read_file("./Data/stage{}Better.csv".format(stage), interval=sampling_range)
+    x, data = rd.read_file("./Data/radiotherapy.csv", interval=sampling_range)
     # around the x_coordinates of the data, convert to days
     x = np.around(x) * 31
 
     # Run minimization
-    result = run(cf.cost_function, params,
+    result = run(cf.cost_function_radiotherapy, params,
                  fcn_args=(x, data, pop_manager,
                            m.tumor_volume_GENG))
 
@@ -129,8 +126,7 @@ for stage in c.TABLE3.keys():
                                   # ResultObj(plt.step, px, py, "Months", "Proportion of Patients Alive",
                                   # curve_label="{} Patients Model Prediction".format(pop_manager2.get_patient_size()), label="{} Patients Model Prediction".format
                                   # (pop_manager2.get_patient_size()), alpha=0.7),
-                                  comment="stage_[{}]_Minimization".format(
-                                      stage)
+                                  comment="rad_alpha_corr_0_"
                                   )
 
 # result.params["V_mu"].vary = True
