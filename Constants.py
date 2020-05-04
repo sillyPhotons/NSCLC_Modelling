@@ -57,16 +57,17 @@ DIAGNOSIS_DELAY_RANGE = [0,0]
 GR_RS_CORRELATION = 0
 
 # Number of months passed per time step
-RESOLUTION = 1
+RESOLUTION = 0.25
 
 # 1.48% survival reduction
 SURVIVAL_REDUCTION = 0
 
 # 2 gray dose fractions each day
+# must be > 0
 RAD_DOSE = 2
 
 # 60 Gy total radiation dose, 5 days a week at 2 Gy fractions
-TOTAL_DOSE = 60
+TOTAL_DOSE = 0
 
 # RTOG8808 Patients received 2 Gy fractions 5 days followed by 2 day rest
 SCHEME = [5, 2]

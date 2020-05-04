@@ -62,14 +62,11 @@ if __name__ == '__main__':
                                             pop_manager,
                                             func)
 
-    plt.plot(x1*31., pop_manager.get_tumor_cell_number_from_volume(tumor_volume1),
-             label="Geng", color="black", alpha=0.7, linewidth=3)
-
     # c.TOTAL_DOSE = 60
     # c.RAD_DOSE = 2
     # c.SCHEME = [3, 4]
     func = m.euler_tumor_volume
-    c.RESOLUTION = 0.5
+
     x = np.arange(
         sampling_range[0]*31, sampling_range[1]*31 + c.RESOLUTION, c.RESOLUTION)
     x2, tumor_volume2 = pp.Radiation_Response(V0,
@@ -82,11 +79,7 @@ if __name__ == '__main__':
                                             pop_manager,
                                             func)
 
-    plt.plot(x2*31., pop_manager.get_tumor_cell_number_from_volume(tumor_volume2),
-             label="Forward Euler", alpha=0.7, linewidth=3)
-
-    func = m.euler_tumor_volume
-    c.RESOLUTION = 0.1
+    func = m.rk4_tumor_volume
     x = np.arange(
         sampling_range[0]*31, sampling_range[1]*31 + c.RESOLUTION, c.RESOLUTION)
     x3, tumor_volume3 = pp.Radiation_Response(V0,
@@ -114,13 +107,16 @@ if __name__ == '__main__':
 
    
 
-   
+    plt.plot(x1*31., pop_manager.get_tumor_cell_number_from_volume(tumor_volume1),
+             label="Geng", color="black", alpha=0.7, linewidth=3)
+    plt.plot(x2*31., pop_manager.get_tumor_cell_number_from_volume(tumor_volume2),
+             label="Forward Euler", alpha=0.7, linewidth=3)
     plt.plot(x3*31., pop_manager.get_tumor_cell_number_from_volume(tumor_volume3),
              label="Runge-Kutta", alpha=0.7, linewidth=3)
     plt.title("$\Delta t = {}$".format(c.RESOLUTION))
     plt.xlabel("Time [days]")
     plt.ylabel("Number of Tumor Cells")
-    # plt.yscale("log")
+    plt.yscale("log")
     plt.legend()
     plt.show()
     # plt.savefig(res_manager.directory_path + "/response.pdf")
