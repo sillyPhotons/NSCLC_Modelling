@@ -49,15 +49,15 @@ RADIATION_ONLY_PATIENT_PERCENTAGE = {'1': 0,
 The delay time, which is the time between diagnosis and the start of the
 treatment, was uniformly sampled from 2 - 3 weeks
 """
-DIAGNOSIS_DELAY_RANGE = [14, 21]
+# DIAGNOSIS_DELAY_RANGE = [14, 21]
 DIAGNOSIS_DELAY_RANGE = [0,0]
 
 # Linear correlation coefficent between tumor growth rate and radiosensitivity
-# GR_RS_CORRELATION = 0.87
-GR_RS_CORRELATION = 0
+GR_RS_CORRELATION = 0.87
+# GR_RS_CORRELATION = 0
 
 # Number of months passed per time step
-RESOLUTION = 0.25
+RESOLUTION = 1
 
 # 1.48% survival reduction
 SURVIVAL_REDUCTION = 0

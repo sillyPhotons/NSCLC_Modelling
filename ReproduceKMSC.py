@@ -43,31 +43,31 @@ if __name__ == '__main__':
         # x, data = rd.read_file("./Data/radiotherapy.csv", interval=sampling_range)
         x, data = rd.read_file("./Data/stage{}Better.csv".format(stage), interval=sampling_range)
 
-        vdts = pp.predict_VDT(params, np.arange(
-            sampling_range[0], sampling_range[1]*31 + c.RESOLUTION, c.RESOLUTION), pop_manager, m.tumor_volume_GENG)
+        # vdts = pp.predict_VDT(params, np.arange(
+        #     sampling_range[0], sampling_range[1]*31 + c.RESOLUTION, c.RESOLUTION), pop_manager, m.tumor_volume_GENG)
 
         # plt.hist(vdts, 50, range = [0, 500],density=True, alpha=0.7, rwidth=0.85, align='left')
         # plt.show()
 
-        # px, py = pp.KMSC_No_Treatment(params,
-        #                                 np.arange(
-        #                                     sampling_range[0]*31, sampling_range[1]*31 + c.RESOLUTION, c.RESOLUTION),
-        #                                 pop_manager,
-        #                                 m.tumor_volume_GENG)
+        px, py = pp.KMSC_No_Treatment(params,
+                                        np.arange(
+                                            sampling_range[0]*31, sampling_range[1]*31 + c.RESOLUTION, c.RESOLUTION),
+                                        pop_manager,
+                                        m.tumor_volume_GENG)
     
-        # res_manager.record_prediction(
-        #     ResultObj(plt.scatter, x, data, "Months",
-        #             "Proportion of Patients Alive", curve_label="Stage {} data".format(stage), label="Stage {} data".format(stage), color = "green", alpha=0.7, s=25),
-        #     ResultObj(plt.step, px, py, "Time [Months]",
-        #             "Proportion of Patients Alive",
-        #             curve_label="Stage {} Model".format(stage),
-        #             label="Stage {} Model".format(stage),  alpha=0.7, linewidth = 3),
-        #     # ResultObj(plt.step, x, data, "Months",
-        #     #           "Proportion of Patients Alive", curve_label="Stage {} Data".format(stage), label="Stage {} Data".format(stage), color="black", alpha=0.7),
-        #     # ResultObj(plt.step, px, py, "Months",
-        #     #           "Proportion of Patients Alive",
-        #     #           curve_label="Stage {} Model".format(stage),
-        #     #           label="Stage {} Model".format(stage), alpha=0.7),
-        #     # comment="Stage_[{}]".format(stage)
-        #     comment="No_Treatment"
-        # )
+        res_manager.record_prediction(
+            ResultObj(plt.scatter, x, data, "Months",
+                    "Proportion of Patients Alive", curve_label="Stage {} data".format(stage), label="Stage {} data".format(stage), color = "green", alpha=0.7, s=25),
+            ResultObj(plt.step, px, py, "Time [Months]",
+                    "Proportion of Patients Alive",
+                    curve_label="Stage {} Model".format(stage),
+                    label="Stage {} Model".format(stage),  alpha=0.7, linewidth = 3),
+            # ResultObj(plt.step, x, data, "Months",
+            #           "Proportion of Patients Alive", curve_label="Stage {} Data".format(stage), label="Stage {} Data".format(stage), color="black", alpha=0.7),
+            # ResultObj(plt.step, px, py, "Months",
+            #           "Proportion of Patients Alive",
+            #           curve_label="Stage {} Model".format(stage),
+            #           label="Stage {} Model".format(stage), alpha=0.7),
+            # comment="Stage_[{}]".format(stage)
+            comment="No_Treatment"
+        )
