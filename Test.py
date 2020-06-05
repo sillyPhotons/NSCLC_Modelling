@@ -1,6 +1,8 @@
+import numpy as np
 import unittest
 
 # Modules to be tested
+import Drug
 import Model
 import Result
 import ReadData
@@ -8,6 +10,46 @@ import Constants
 import GetProperties
 import ParallelPredict
 
+
+class Test_Drug (unittest.TestCase):
+
+    def test_Drug(self):
+        test = Drug.Drug.from_week_days_per_week([], 1, 0, 1)
+        self.assertEqual(1, test.dose)
+        expected = np.array([0,0,0,0,0,0,0])
+        self.assertIsNone(np.testing.assert_array_equal(expected, test.chemo_days))
+
+        test = Drug.Drug.from_week_days_per_week([], 2, 0, 1)
+        expected = np.array([0,0,0,0,0,0,0]*2)
+        self.assertIsNone(np.testing.assert_array_equal(expected, test.chemo_days))
+
+        test = Drug.Drug.from_week_days_per_week([1], 1, 0, 1)
+        expected = np.array([1,0,0,0,0,0,0])
+        self.assertIsNone(np.testing.assert_array_equal(expected, test.chemo_days))
+
+        test = Drug.Drug.from_week_days_per_week([1,7], 1, 0, 1)
+        expected = np.array([1,0,0,0,0,0,1])
+        self.assertIsNone(np.testing.assert_array_equal(expected, test.chemo_days))
+
+        test = Drug.Drug.from_week_days_per_week([2,3], 1, 0, 1)
+        expected = np.array([0,1,1,0,0,0,0])
+        self.assertIsNone(np.testing.assert_array_equal(expected, test.chemo_days))
+
+        test = Drug.Drug.from_week_days_per_week([1,2,3,4,5,6,7], 1, 0, 1)
+        expected = np.array([1,1,1,1,1,1,1])
+        self.assertIsNone(np.testing.assert_array_equal(expected, test.chemo_days))
+
+        test = Drug.Drug.from_week_days_per_week([2,3], 3, 0, 1)
+        expected = np.array([0,1,1,0,0,0,0]*3)
+        self.assertIsNone(np.testing.assert_array_equal(expected, test.chemo_days))
+
+        test = Drug.Drug.from_week_days_per_week([2,3], 3, 3, 1)
+        expected = np.array([0,0,0] + [0,1,1,0,0,0,0]*3)
+        self.assertIsNone(np.testing.assert_array_equal(expected, test.chemo_days))
+
+        test = Drug.Drug.from_week_days_per_week([2,3], 1, 0, 1)
+        expected = np.array([0,1,1,0,0,0,0])
+        self.assertIsNone(np.testing.assert_array_equal(expected, test.chemo_days))
 
 class Test_Model (unittest.TestCase):
 
@@ -312,7 +354,7 @@ class Test_GetProperties (unittest.TestCase):
         treatment_delay = self.pop_man.get_treatment_delay()
       
         func = self.pop_man.get_radiation_days
-        self.assertRaises(AssertionError, func, treatment_delay, num_step_per_day*10)
+        self.assertRaises(AssertionError, func, treatment_delay, num_step_per_day*0)
 
         retval = func(treatment_delay, num_step_per_day*100)
         self.assertEqual(retval.shape[0], self.pop_man.patient_size)
@@ -349,4 +391,4 @@ class Test_Constants(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main(verbosity=2)
+    unittest.main()

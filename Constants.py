@@ -67,7 +67,7 @@ SURVIVAL_REDUCTION = 0
 RAD_DOSE = 2
 
 # 60 Gy total radiation dose, 5 days a week at 2 Gy fractions
-TOTAL_DOSE = 0
+TOTAL_DOSE = 60
 
 # RTOG8808 Patients received 2 Gy fractions 5 days followed by 2 day rest
 SCHEME = [5, 2]

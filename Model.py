@@ -210,6 +210,9 @@ def volume_doubling_time(V0, V1):
 
     return (365)*np.log(2) / np.log(V1/V0)
 
+def drug_concentration (C_max, half_life, time):
+
+    return C_max * np.exp((-np.log(2) / half_life)*time)
 
 # def gompertz_ode(N, t, growth_rate, K):
 #     """

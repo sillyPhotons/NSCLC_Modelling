@@ -1,7 +1,7 @@
 """
 Author: Ruiheng Su 2020
 
-File containing definition of `PropertyManager` class.
+definition of `PropertyManager` class.
 """
 
 import csv
@@ -505,6 +505,65 @@ class PropertyManager ():
 
         return treatment_days
 
+    def get_chemotherapy_days(self, treatment_delay, num_steps, *drugs):
+        """
+        Returns a 2 dimensional numpy array, with dimensions equal to the 
+        number of Monte Carlo patients times the number of time steps (Each 
+        row represents one patient, each column represents one time step). Each
+        element of the array is either 1 or 0, with 1 representing that 
+        radiation is applied at that time step, and  0 representing no 
+        radiation. The dose fraction for each day is given in `Constants.py` as 
+        `RAD_DOSE`, and the total dose is given as `TOTAL_DOSE`.
+
+        A delay is uniformly sampled between a closed interval given by the 
+        python list `DIAGNOSIS_DELAY_RANGE` in `Constants.py`. The radiation is 
+        then applied for 5 days a week at `RAD_DOSE` fraction per day, to a 
+        total of `TOTAL_DOSE`.   
+
+        Params::
+            `num_steps`: number of time steps. The time step has the basic unit of [days]
+
+        Requires::
+            `num_steps` is sufficently large so that total dose of `TOTAL_DOSE` [Gy] is achieved
+
+        Raises::
+            Assertion error if `TOTAL_DOSE` requirement is not met
+        """
+
+        treatment_days = np.zeros([self.patient_size, num_steps])
+
+        one_day = int(1/c.RESOLUTION)
+
+        days_with_rad = c.SCHEME[0] * one_day
+        rest = c.SCHEME[1] * one_day
+
+        fraction_per_step = c.RAD_DOSE/one_day
+
+        dose_per_iteration = days_with_rad * fraction_per_step
+        max_full_iterations = int(c.TOTAL_DOSE/dose_per_iteration)
+
+        for i in range(self.patient_size):
+
+            steps_delayed = int(np.round(treatment_delay[i]/c.RESOLUTION))
+
+            total_dose = 0
+            last_step = steps_delayed
+            for num in range(max_full_iterations):
+                rad_days = last_step + days_with_rad
+                treatment_days[i][last_step:rad_days] = 1
+                total_dose += (fraction_per_step) * (rad_days - last_step)
+                last_step = rad_days + rest
+
+            while total_dose < c.TOTAL_DOSE:
+                rad_days = last_step + one_day
+                treatment_days[i][last_step:rad_days] = 1
+                total_dose += (fraction_per_step) * (rad_days - last_step)
+                last_step = rad_days
+            entries = np.count_nonzero(treatment_days[i])
+
+            assert(entries*fraction_per_step == c.TOTAL_DOSE)
+
+        return treatment_days
 # plt.rc("text", usetex=True)
         
 # plt.rcParams.update({'font.size': 18,
